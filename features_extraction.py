@@ -60,7 +60,7 @@ def extract_features(y, sr):
     cols_mfcc = [f"mfcc_mean_{i}" for i, _ in enumerate(mfcc_mean)]
     mfcc_df = pd.DataFrame([mfcc_mean])
     mfcc_df.columns = cols_mfcc
-    print(mfcc_df)
+    return mfcc_df
     '''
     chroma = librosa.feature.chroma_stft(y=y, sr=sr)
     zero_crossings = librosa.feature.zero_crossing_rate(y)
@@ -95,7 +95,8 @@ if process_segments:
     for folder in subfolders:
         for segment in glob(folder + "/*.mp3"):
             y, sr = librosa.load(segment, sr=sr)
-            extract_features(y=y, sr=sr)
+            df = extract_features(y=y, sr=sr)
+            print(df)
             exit(0)
 
 
