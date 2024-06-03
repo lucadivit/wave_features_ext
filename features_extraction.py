@@ -53,7 +53,8 @@ def extract_features(y, sr):
     axis=1: Ogni elemento del vettore rappresenta la media dei valori di un singolo coefficiente MFCC attraverso tutto il segnale audio. 
     Fornisce un'idea generale della distribuzione dei coefficienti MFCC per l'intero audio. Dim Output = n_mfcc
     axis=0: Ogni elemento del vettore rappresenta la media dei valori di tutti i coefficienti MFCC per un singolo frame temporale. 
-    Fornisce un'idea di come le caratteristiche spettrali cambiano nel tempo. Dim Output = n_t
+    Fornisce un'idea di come le caratteristiche spettrali cambiano nel tempo. Dim Output = n_t.
+    Parametro Tunabile
     '''
     mfcc_mean = np.mean(mfccs, axis=0)
     # mfcc_std = np.std(mfccs, axis=0)
