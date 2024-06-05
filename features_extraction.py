@@ -77,7 +77,7 @@ def compute_gfcc_features(y, sr):
     gammatone_spec = gtgram(y, sr, win_size, hop_size, n_filters, f_min)
     log_gammatone_spec = np.log(gammatone_spec + 1e-6)
     # Valore tunabile
-    num_ceps = 13
+    num_ceps = 30
     gfccs = dct(log_gammatone_spec, type=2, axis=0, norm='ortho')[:num_ceps]
     gfcc_mean = np.mean(gfccs, axis=0)
     # gfcc_std = np.std(gfccs, axis=0)
