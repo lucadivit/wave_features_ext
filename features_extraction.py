@@ -1,4 +1,4 @@
-import os, librosa, numpy as np, pandas as pd
+import os, librosa, numpy as np, pandas as pd, wave
 from pydub import AudioSegment
 from gammatone.gtgram import gtgram
 from glob import glob
@@ -6,17 +6,18 @@ from scipy.fftpack import dct
 from matplotlib import pyplot as plt
 from spafe.features.bfcc import bfcc
 from spafe.utils.preprocessing import SlidingWindow
+from constants import freq, classes, output_folder_name_converter, channels, segment_folder
 
 # Tunable
 mfcc_axis = 0
 gfcc_axis = 0
 bfcc_axis = 0
-sr = 22.05 * 10e3
+sr = freq
+channels = channels
 n_ceps = 30
+sec_split = 0.5
 
 # Constants
-segment_folder = "segmented_audio"
-audio_folder = "audio"
 split_audio = False
 process_segments = True
 
@@ -24,6 +25,13 @@ process_segments = True
 # https://www.sciencedirect.com/science/article/abs/pii/S016740482300192X
 # https://github.com/SuperKogito/spafe
 # https://github.com/MalwareSamples/Linux-Malware-Samples
+
+def get_wav_duration(file_path):
+    with wave.open(file_path, 'rb') as wav_file:
+        frames = wav_file.getnframes()
+        rate = wav_file.getframerate()
+        duration = frames / float(rate)
+    return duration
 
 # Normalizzazione tramite padding
 def load_and_normalize_audio(file_path, sr=44100, max_length=40000):
@@ -40,31 +48,34 @@ def load_and_normalize_audio(file_path, sr=44100, max_length=40000):
 
 # Normalizzazione tramite segmentazione
 def load_and_segment_audio(file_path, segment_duration=10, overlap=0.5, sr=44100):
-    y, sr = librosa.load(file_path, sr=sr)
-    segment_length = int(segment_duration * sr)
-    step_length = int(segment_length * (1 - overlap))
-    segments = []
-    for start in range(0, len(y), step_length):
-        end = start + segment_length
-        if end <= len(y):
-            segments.append(y[start:end])
-        else:
-            # Pad the last segment if it is shorter than segment_length
-            segment = np.pad(y[start:end], (0, segment_length - len(y[start:end])), mode='constant')
-            segments.append(segment)
-            break  # Stop if we have padded the last segment
+    if get_wav_duration(file_path=file_path) > segment_duration:
+        y, sr = librosa.load(file_path, sr=sr)
+        segment_length = int(segment_duration * sr)
+        step_length = int(segment_length * (1 - overlap))
+        segments = []
+        for start in range(0, len(y), step_length):
+            end = start + segment_length
+            if end <= len(y):
+                segments.append(y[start:end])
+            else:
+                # Pad the last segment if it is shorter than segment_length
+                segment = np.pad(y[start:end], (0, segment_length - len(y[start:end])), mode='constant')
+                segments.append(segment)
+                break  # Stop if we have padded the last segment
+    else:
+        segments = None
     return segments, sr
 
 
 def save_segments_as_mp3(segments, sr, output_dir, base_filename):
     os.makedirs(f"{output_dir}/{base_filename}", exist_ok=True)
     for i, segment in enumerate(segments):
-        # Convert numpy array to audio segment
+        # Convert numpy array to waves segment
         audio_segment = AudioSegment(
             segment.tobytes(),
             frame_rate=sr,
             sample_width=segment.dtype.itemsize,
-            channels=1
+            channels=channels
         )
         # Save as MP3
         output_path = f"{output_dir}/{base_filename}/{base_filename}_segment_{i + 1}.mp3"
@@ -74,8 +85,8 @@ def save_segments_as_mp3(segments, sr, output_dir, base_filename):
 
 def compute_mfcc_features(y, sr):
     '''
-    axis=1: Ogni elemento del vettore rappresenta la media dei valori di un singolo coefficiente MFCC attraverso tutto il segnale audio.
-    Fornisce un'idea generale della distribuzione dei coefficienti MFCC per l'intero audio. Dim Output = n_mfcc
+    axis=1: Ogni elemento del vettore rappresenta la media dei valori di un singolo coefficiente MFCC attraverso tutto il segnale waves.
+    Fornisce un'idea generale della distribuzione dei coefficienti MFCC per l'intero waves. Dim Output = n_mfcc
     axis=0: Ogni elemento del vettore rappresenta la media dei valori di tutti i coefficienti MFCC per un singolo frame temporale.
     Fornisce un'idea di come le caratteristiche spettrali cambiano nel tempo. Dim Output = n_t.
     Parametro Tunabile
@@ -136,7 +147,8 @@ def extract_features(y, sr):
     print("BFCC Shape", bfcc_df.shape)
     print("---------------------------")
     result = pd.concat([mfcc_df, gfcc_df, bfcc_df], axis=1)
-    return result
+
+    # Other features that i can build.
     '''
     chroma = librosa.feature.chroma_stft(y=y, sr=sr)
     zero_crossings = librosa.feature.zero_crossing_rate(y)
@@ -154,8 +166,11 @@ def extract_features(y, sr):
     return features
     '''
 
+    return result
 
-def plot_mel_spectogram():
+
+
+def plot_mel_spectogram(y):
     S = librosa.feature.melspectrogram(y=y, sr=sr)
     S_dB = librosa.power_to_db(S, ref=np.max)
 
@@ -167,12 +182,17 @@ def plot_mel_spectogram():
 
 
 if split_audio:
-    for audio in glob(f"{audio_folder}/*.wav"):
-        print(f"Splitting {audio}")
-        base_name = audio.split("/")[-1].split(".")[0]
-        segments, _ = load_and_segment_audio(file_path=audio, sr=sr, segment_duration=5, overlap=0.5)
-        save_segments_as_mp3(segments=segments, sr=sr, output_dir=segment_folder, base_filename=base_name)
+    for file_class in classes:
+        for audio in glob(f"{output_folder_name_converter}{file_class}/*.wav"):
+            print(f"Splitting {audio}")
+            base_name = audio.split("/")[-1].split(".")[0]
+            segments, _ = load_and_segment_audio(file_path=audio, sr=sr, segment_duration=sec_split, overlap=0.3)
+            if segments is not None:
+                save_segments_as_mp3(segments=segments, sr=sr, output_dir=segment_folder + "/" + file_class, base_filename=base_name)
+            else:
+                print(f"Audio {audio} is shorter then {sec_split} seconds. Ignored")
 
+'''
 if process_segments:
     subfolders = [x[0] for x in os.walk(segment_folder)]
     for folder in subfolders:
@@ -180,5 +200,6 @@ if process_segments:
             y, sr = librosa.load(segment, sr=sr)
             df = extract_features(y=y, sr=sr)
             print(df)
-            # plot_mel_spectogram()
+            # plot_mel_spectogram(y)
             exit(0)
+'''
