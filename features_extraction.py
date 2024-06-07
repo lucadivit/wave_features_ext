@@ -15,11 +15,7 @@ bfcc_axis = 0
 sr = freq
 channels = channels
 n_ceps = 30
-sec_split = 0.5
-
-# Constants
-split_audio = False
-process_segments = True
+sec_split = 0.4
 
 
 # https://www.sciencedirect.com/science/article/abs/pii/S016740482300192X
@@ -32,6 +28,7 @@ def get_wav_duration(file_path):
         rate = wav_file.getframerate()
         duration = frames / float(rate)
     return duration
+
 
 # Normalizzazione tramite padding
 def load_and_normalize_audio(file_path, sr=44100, max_length=40000):
@@ -169,7 +166,6 @@ def extract_features(y, sr):
     return result
 
 
-
 def plot_mel_spectogram(y):
     S = librosa.feature.melspectrogram(y=y, sr=sr)
     S_dB = librosa.power_to_db(S, ref=np.max)
@@ -180,6 +176,9 @@ def plot_mel_spectogram(y):
     plt.title('Spettrogramma di Mel')
     plt.show()
 
+# Constants
+split_audio = True
+process_segments = False
 
 if split_audio:
     for file_class in classes:
@@ -188,11 +187,11 @@ if split_audio:
             base_name = audio.split("/")[-1].split(".")[0]
             segments, _ = load_and_segment_audio(file_path=audio, sr=sr, segment_duration=sec_split, overlap=0.3)
             if segments is not None:
-                save_segments_as_mp3(segments=segments, sr=sr, output_dir=segment_folder + "/" + file_class, base_filename=base_name)
+                save_segments_as_mp3(segments=segments, sr=sr, output_dir=segment_folder + "/" + file_class,
+                                     base_filename=base_name)
             else:
                 print(f"Audio {audio} is shorter then {sec_split} seconds. Ignored")
 
-'''
 if process_segments:
     subfolders = [x[0] for x in os.walk(segment_folder)]
     for folder in subfolders:
@@ -202,4 +201,3 @@ if process_segments:
             print(df)
             # plot_mel_spectogram(y)
             exit(0)
-'''
