@@ -23,6 +23,7 @@ process_segments = True
 
 # https://www.sciencedirect.com/science/article/abs/pii/S016740482300192X
 # https://github.com/SuperKogito/spafe
+# https://github.com/MalwareSamples/Linux-Malware-Samples
 
 # Normalizzazione tramite padding
 def load_and_normalize_audio(file_path, sr=44100, max_length=40000):
