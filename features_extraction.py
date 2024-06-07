@@ -177,8 +177,8 @@ def plot_mel_spectogram(y):
     plt.show()
 
 # Constants
-split_audio = True
-process_segments = False
+split_audio = False
+process_segments = True
 
 if split_audio:
     for file_class in classes:
@@ -193,11 +193,25 @@ if split_audio:
                 print(f"Audio {audio} is shorter then {sec_split} seconds. Ignored")
 
 if process_segments:
+    dfs = []
+    skipped = []
+    errors = []
     subfolders = [x[0] for x in os.walk(segment_folder)]
-    for folder in subfolders:
-        for segment in glob(folder + "/*.mp3"):
-            y, sr = librosa.load(segment, sr=sr)
-            df = extract_features(y=y, sr=sr)
-            print(df)
-            # plot_mel_spectogram(y)
-            exit(0)
+    for i, folder in enumerate(subfolders):
+        val = folder.split("/")
+        sample_class = set(val).intersection(set(classes))
+        for j, segment in enumerate(glob(folder + "/*.mp3")):
+            try:
+                y, sr = librosa.load(segment, sr=sr)
+                df = extract_features(y=y, sr=sr)
+                df["path"] = segment
+                df["label"] = list(sample_class)[0]
+                dfs.append(df)
+                # plot_mel_spectogram(y)
+            except Exception as e:
+                skipped.append(segment)
+                errors.append(e)
+    final_df = pd.concat(dfs, ignore_index=True)
+    final_df.to_csv("dataset.csv", index=False)
+    if len(skipped) > 0:
+        skipped_df = pd.DataFrame({"path": skipped, "error": errors})
