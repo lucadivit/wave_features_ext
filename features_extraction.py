@@ -214,4 +214,4 @@ if process_segments:
     final_df = pd.concat(dfs, ignore_index=True)
     final_df.to_csv("dataset.csv", index=False)
     if len(skipped) > 0:
-        skipped_df = pd.DataFrame({"path": skipped, "error": errors})
+        pd.DataFrame({"path": skipped, "error": errors}).to_csv("skipped.csv", index=False)
