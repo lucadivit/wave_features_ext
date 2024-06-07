@@ -18,10 +18,6 @@ n_ceps = 30
 sec_split = 0.4
 
 
-# https://www.sciencedirect.com/science/article/abs/pii/S016740482300192X
-# https://github.com/SuperKogito/spafe
-# https://github.com/MalwareSamples/Linux-Malware-Samples
-
 def get_wav_duration(file_path):
     with wave.open(file_path, 'rb') as wav_file:
         frames = wav_file.getnframes()

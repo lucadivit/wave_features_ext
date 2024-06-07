@@ -19,3 +19,7 @@ collegato al funzionamento del resto.
 
 ## Note
 Il repo è scritto in `python3.12` su sistema `Ubuntu 24.04`.
+Link Utili:
+1. [Paper](https://www.sciencedirect.com/science/article/abs/pii/S016740482300192X)
+2. [Spafe](https://github.com/SuperKogito/spafe)
+3. [Malware Source 1](https://github.com/MalwareSamples/Linux-Malware-Samples)
