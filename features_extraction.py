@@ -195,10 +195,15 @@ if process_segments:
     skipped = []
     errors = []
     subfolders = [x[0] for x in os.walk(segment_folder)]
+    len_sub = len(subfolders)
     for i, folder in enumerate(subfolders):
+        print(f"Processing Folder {folder}. {i+1}/{len_sub}")
         val = folder.split("/")
         sample_class = set(val).intersection(set(classes))
-        for j, segment in enumerate(glob(folder + "/*.mp3")):
+        files = glob(folder + "/*.mp3")
+        len_files = len(files)
+        for j, segment in enumerate(files):
+            print(f"Processing File {segment}. {j+1}/{len_files}")
             try:
                 y, sr = librosa.load(segment, sr=sr)
                 df = extract_features(y=y, sr=sr)
