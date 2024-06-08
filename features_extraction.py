@@ -6,7 +6,9 @@ from scipy.fftpack import dct
 from matplotlib import pyplot as plt
 from spafe.features.bfcc import bfcc
 from spafe.utils.preprocessing import SlidingWindow
-from constants import freq, classes, output_folder_name_converter, channels, segment_folder
+from constants import (freq, classes, output_folder_name_converter,
+                       channels, segment_folder, output_file, skipped_file,
+                       y_name)
 
 # Tunable
 mfcc_axis = 0
@@ -201,13 +203,13 @@ if process_segments:
                 y, sr = librosa.load(segment, sr=sr)
                 df = extract_features(y=y, sr=sr)
                 df["path"] = segment
-                df["label"] = list(sample_class)[0]
+                df[y_name] = list(sample_class)[0]
                 dfs.append(df)
                 # plot_mel_spectogram(y)
             except Exception as e:
                 skipped.append(segment)
                 errors.append(e)
     final_df = pd.concat(dfs, ignore_index=True)
-    final_df.to_csv("dataset.csv", index=False)
+    final_df.to_csv(output_file, index=False)
     if len(skipped) > 0:
-        pd.DataFrame({"path": skipped, "error": errors}).to_csv("skipped.csv", index=False)
+        pd.DataFrame({"path": skipped, "error": errors}).to_csv(skipped_file, index=False)

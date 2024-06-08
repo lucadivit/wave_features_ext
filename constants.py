@@ -9,3 +9,7 @@ segment_folder = "segmented_audio"
 
 freq = 44100
 channels = 1
+
+output_file = "dataset.csv"
+skipped_file = "skipped.csv"
+y_name = "label"
