@@ -1,0 +1,13 @@
+mfcc_axis = 1
+gfcc_axis = 1
+bfcc_axis = 1
+n_ceps = 14
+sec_split = 0.4
+freq = 44100
+channels = 1
+------------------------------------------------------
+Best XGB Accuracy: 0.8504746361167178
+Best XGB Parameters: {'learning_rate': 0.1, 'max_depth': 5, 'n_estimators': 300, 'subsample': 0.8}
+Accuracy: 0.8590032154340836
+Precision: 0.8566186847304544
+Recall: 0.8915981198589894
