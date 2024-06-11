@@ -4,6 +4,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import VotingClassifier
 from xgboost import XGBClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import AdaBoostClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score
 import seaborn as sns
@@ -15,6 +16,7 @@ from sklearn.model_selection import HalvingGridSearchCV, HalvingRandomSearchCV
 
 seed = 42
 data = pd.read_csv(output_file)
+name = None
 
 X = data.drop(y_name, axis=1)
 y = data[y_name]
@@ -27,7 +29,9 @@ scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
+
 '''
+name = "xgb"
 xgb = XGBClassifier(use_label_encoder=False, verbosity=2, seed=seed)
 xgb_param_grid = {
     'n_estimators': [100, 200, 300],
@@ -40,8 +44,10 @@ halving_grid_search.fit(X_train, y_train)
 print("Best XGB Accuracy:", halving_grid_search.best_score_)
 print("Best XGB Parameters:", halving_grid_search.best_params_)
 best_model = halving_grid_search.best_estimator_
-predictions = best_model.predict(X_test)
 '''
+
+'''
+name = "rf"
 rf = RandomForestClassifier(verbose=1, random_state=seed)
 rf_param_grid = {
     'n_estimators': [100, 200, 300, 400],
@@ -52,31 +58,37 @@ halving_grid_search.fit(X_train, y_train)
 print("Best RF Accuracy:", halving_grid_search.best_score_)
 print("Best RF Parameters:", halving_grid_search.best_params_)
 best_model = halving_grid_search.best_estimator_
-predictions = best_model.predict(X_test)
 '''
-rf = RandomForestClassifier(verbose=1, random_state=seed)
+
+'''
+name = "knn"
 knn = KNeighborsClassifier()
 
-param_grid = {
-    'xgb__n_estimators': [100, 200, 300],
-    'xgb__max_depth': [3, 4, 5],
-    'xgb__learning_rate': [0.05, 0.1, 0.15],
-    'xgb__subsample': [0.8, 0.9, 1.],
-    'rf__n_estimators': [100, 200, 300],
-    'rf__max_depth': [None, 5, 10],
-    'knn__n_neighbors': [5, 7, 9],
-    'knn__weights': ['uniform', 'distance'],
-    'knn__p': [1, 2, 3]
+knn_param_grid = {
+    'n_neighbors': [5, 7, 9],
+    'weights': ['uniform', 'distance'],
+    'p': [1, 2, 3]
 }
-
-ensemble = VotingClassifier(estimators=[('xgb', xgb), ('rf', rf), ('knn', knn)], voting='hard')
-grid_search = GridSearchCV(estimator=ensemble, param_grid=param_grid, cv=3, scoring='accuracy', n_jobs=-1, verbose=2)
-grid_search.fit(X_train, y_train)
-print("Best parameters found: ", grid_search.best_params_)
-print("Best accuracy: ", grid_search.best_score_)
-best_model = grid_search.best_estimator_
+halving_grid_search = HalvingGridSearchCV(estimator=knn, param_grid=knn_param_grid, cv=3, factor=2, verbose=2)
+halving_grid_search.fit(X_train, y_train)
+print("Best KNN Accuracy:", halving_grid_search.best_score_)
+print("Best KNN Parameters:", halving_grid_search.best_params_)
+best_model = halving_grid_search.best_estimator_
 '''
 
+name = "ada"
+ada = AdaBoostClassifier(random_state=seed, algorithm="SAMME")
+ada_param_grid = {
+    'learning_rate': [0.5, 1, 1.5, 2],
+    'n_estimators': [50, 100, 150, 200]
+}
+halving_grid_search = HalvingGridSearchCV(estimator=ada, param_grid=ada_param_grid, cv=3, factor=2, verbose=2)
+halving_grid_search.fit(X_train, y_train)
+print("Best ADA Accuracy:", halving_grid_search.best_score_)
+print("Best ADA Parameters:", halving_grid_search.best_params_)
+best_model = halving_grid_search.best_estimator_
+
+# ensemble = VotingClassifier(estimators=[('xgb', xgb), ('rf', rf), ('knn', knn)], voting='hard')
 
 y_pred = best_model.predict(X_test)
 
@@ -93,5 +105,6 @@ sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
 plt.xlabel('Predicted')
 plt.ylabel('True')
 plt.title('Confusion Matrix')
-plt.savefig('confusion_matrix.png')
+fn = 'confusion_matrix.png' if name is None else f"confusion_matrix_{name}.png"
+plt.savefig(fn)
 plt.show()

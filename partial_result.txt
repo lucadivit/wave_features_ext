@@ -19,3 +19,15 @@ Best RF Parameters: {'max_depth': None, 'n_estimators': 300}
 Accuracy: 0.8988745980707395
 Precision: 0.8988215004311584
 Recall: 0.9186251468860165
+
+Best KNN Accuracy: 0.7997784909525013
+Best KNN Parameters: {'n_neighbors': 9, 'p': 1, 'weights': 'distance'}
+Accuracy: 0.8043408360128618
+Precision: 0.8202049780380674
+Recall: 0.822855464159812
+
+Best ADA Accuracy: 0.7503052986017603
+Best ADA Parameters: {'learning_rate': 1, 'n_estimators': 200}
+Accuracy: 0.757556270096463
+Precision: 0.7515923566878981
+Recall: 0.8319623971797885
