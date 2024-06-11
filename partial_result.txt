@@ -1,4 +1,4 @@
-1.
+1. dataset_2.csv
 
 mfcc_axis = 1
 gfcc_axis = 1
@@ -31,3 +31,13 @@ Best ADA Parameters: {'learning_rate': 1, 'n_estimators': 200}
 Accuracy: 0.757556270096463
 Precision: 0.7515923566878981
 Recall: 0.8319623971797885
+
+2. dataset_1.csv
+
+mfcc_axis = 0
+gfcc_axis = 0
+bfcc_axis = 0
+n_ceps = 30
+sec_split = 0.4
+freq = 44100
+channels = 1
