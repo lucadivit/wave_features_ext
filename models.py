@@ -27,6 +27,7 @@ scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
+'''
 xgb = XGBClassifier(use_label_encoder=False, verbosity=2, seed=seed)
 xgb_param_grid = {
     'n_estimators': [100, 200, 300],
@@ -40,7 +41,18 @@ print("Best XGB Accuracy:", halving_grid_search.best_score_)
 print("Best XGB Parameters:", halving_grid_search.best_params_)
 best_model = halving_grid_search.best_estimator_
 predictions = best_model.predict(X_test)
-
+'''
+rf = RandomForestClassifier(verbose=1, random_state=seed)
+rf_param_grid = {
+    'n_estimators': [100, 200, 300, 400],
+    'max_depth': [None, 5, 10],
+}
+halving_grid_search = HalvingGridSearchCV(estimator=rf, param_grid=rf_param_grid, cv=3, factor=2, verbose=2)
+halving_grid_search.fit(X_train, y_train)
+print("Best RF Accuracy:", halving_grid_search.best_score_)
+print("Best RF Parameters:", halving_grid_search.best_params_)
+best_model = halving_grid_search.best_estimator_
+predictions = best_model.predict(X_test)
 '''
 rf = RandomForestClassifier(verbose=1, random_state=seed)
 knn = KNeighborsClassifier()
