@@ -1,3 +1,4 @@
+------------------------------------------------------
 1. dataset_2.csv
 
 mfcc_axis = 1
@@ -7,7 +8,8 @@ n_ceps = 14
 sec_split = 0.4
 freq = 44100
 channels = 1
-------------------------------------------------------
+Standard Scaler
+
 Best XGB Accuracy: 0.8504746361167178
 Best XGB Parameters: {'learning_rate': 0.1, 'max_depth': 5, 'n_estimators': 300, 'subsample': 0.8}
 Accuracy: 0.8590032154340836
@@ -32,7 +34,127 @@ Accuracy: 0.757556270096463
 Precision: 0.7515923566878981
 Recall: 0.8319623971797885
 
-2. dataset_1.csv
+Best SVC Accuracy: 0.7280028064356934
+Best SVC Parameters: {'C': 2, 'kernel': 'rbf'}
+Accuracy: 0.7358520900321543
+Precision: 0.6969358085439499
+Recall: 0.9153936545240893
+------------------------------------------------------
+------------------------------------------------------
+2. dataset_2.csv
+
+mfcc_axis = 1
+gfcc_axis = 1
+bfcc_axis = 1
+n_ceps = 14
+sec_split = 0.4
+freq = 44100
+channels = 1
+Standard Scaler
+Colonne Rimosse "mfcc_mean_1", "mfcc_mean_4", "mfcc_mean_6", "gfcc_mean_2", "mfcc_mean_8", "mfcc_mean_7", "mfcc_mean_10"
+Rimossi Outliers (whole dataset)
+
+Best XGB Accuracy: 0.8419076610857433
+Best XGB Parameters: {'learning_rate': 0.1, 'max_depth': 5, 'n_estimators': 300, 'subsample': 0.8}
+Accuracy: 0.8528735632183908
+Precision: 0.862533692722372
+Recall: 0.90310442144873
+
+Best RF Accuracy: 0.8395738203957381
+Best RF Parameters: {'max_depth': None, 'n_estimators': 400}
+Accuracy: 0.8660919540229886
+Precision: 0.8571428571428571
+Recall: 0.9369708372530574
+
+Best KNN Accuracy: 0.791476407914764
+Best KNN Parameters: {'n_neighbors': 9, 'p': 1, 'weights': 'distance'}
+Accuracy: 0.8172413793103448
+Precision: 0.8627069133398247
+Recall: 0.8334901222953904
+
+Best ADA Accuracy: 0.7307965499746322
+Best ADA Parameters: {'learning_rate': 0.5, 'n_estimators': 200}
+Accuracy: 0.7224137931034482
+Precision: 0.731629392971246
+Recall: 0.8617121354656632
+
+Best SVC Accuracy: 0.8188736681887367
+Best SVC Parameters: {'C': 2, 'kernel': 'rbf'}
+Accuracy: 0.8270114942528736
+Precision: 0.8359788359788359
+Recall: 0.8918156161806209
+------------------------------------------------------
+------------------------------------------------------
+3. dataset_2.csv
+
+mfcc_axis = 1
+gfcc_axis = 1
+bfcc_axis = 1
+n_ceps = 14
+sec_split = 0.4
+freq = 44100
+channels = 1
+Power Scaler (Yao Johnson)
+Colonne Rimosse "mfcc_mean_1", "mfcc_mean_4", "mfcc_mean_6", "gfcc_mean_2", "mfcc_mean_8", "mfcc_mean_7", "mfcc_mean_10"
+Rimossi Outliers (whole dataset)
+
+Best XGB Accuracy: 0.8405885337392186
+Best XGB Parameters: {'learning_rate': 0.1, 'max_depth': 5, 'n_estimators': 300, 'subsample': 0.8}
+Accuracy: 0.860919540229885
+Precision: 0.8742023701002735
+Recall: 0.9021636876763875
+
+Best RF Accuracy: 0.8440385591070522
+Best RF Parameters: {'max_depth': None, 'n_estimators': 400}
+Accuracy: 0.8706896551724138
+Precision: 0.8656195462478184
+Recall: 0.9332079021636877
+
+Best KNN Accuracy: 0.7935058346017251
+Best KNN Parameters: {'n_neighbors': 9, 'p': 1, 'weights': 'distance'}
+Accuracy: 0.8143678160919541
+Precision: 0.8517110266159695
+Recall: 0.8428974600188147
+
+Best ADA Accuracy: 0.7331303906646373
+Best ADA Parameters: {'learning_rate': 1, 'n_estimators': 200}
+Warning: Ignoring XDG_SESSION_TYPE=wayland on Gnome. Use QT_QPA_PLATFORM=wayland to run on Wayland anyway.
+Accuracy: 0.728735632183908
+Precision: 0.7452282157676349
+Recall: 0.8447789275634995
+
+Best SVC Accuracy: 0.8190766108574327
+Best SVC Parameters: {'C': 2, 'kernel': 'rbf'}
+Warning: Ignoring XDG_SESSION_TYPE=wayland on Gnome. Use QT_QPA_PLATFORM=wayland to run on Wayland anyway.
+Accuracy: 0.8224137931034483
+Precision: 0.8312829525483304
+Recall: 0.889934148635936
+------------------------------------------------------
+------------------------------------------------------
+4. dataset_2.csv
+
+mfcc_axis = 1
+gfcc_axis = 1
+bfcc_axis = 1
+n_ceps = 14
+sec_split = 0.4
+freq = 44100
+channels = 1
+Power Scaler (Yao Johnson) per xgb, rf
+Colonne Rimosse "mfcc_mean_1", "mfcc_mean_4", "mfcc_mean_6", "gfcc_mean_2", "mfcc_mean_8", "mfcc_mean_7", "mfcc_mean_10"
+clip outlier
+
+Best XGB Accuracy: 0.8470084856868599
+Best XGB Parameters: {'learning_rate': 0.1, 'max_depth': 5, 'n_estimators': 300, 'subsample': 0.8}
+Accuracy: 0.86
+Precision: 0.86
+Recall: 0.89
+
+Best RF Accuracy: 0.88
+Best RF Parameters: {'max_depth': None, 'n_estimators': 400}
+Accuracy: 0.9
+Precision: 0.89
+Recall: 0.92
 
 mfcc_axis = 0
 gfcc_axis = 0

@@ -8,3 +8,5 @@ PyQt5==5.15.10
 spafe==0.3.3
 seaborn==0.13.2
 xgboost==2.0.3
+keras==3.3.3
+tensorflow==2.16.1
