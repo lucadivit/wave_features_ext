@@ -15,7 +15,8 @@ from sklearn.base import TransformerMixin
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
+from tensorflow.keras import layers, regularizers, callbacks
+from tensorflow.keras.optimizers import Adam, RMSprop
 
 class ColumnWiseOutlierClipper(TransformerMixin):
     def __init__(self, lower_percentile=1, upper_percentile=99):
@@ -83,11 +84,11 @@ y = data[y_name]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=seed, shuffle=True)
 
 xgb_model = False
-rf_model = True
+rf_model = False
 knn_model = False
 ada_model = False
 svc_model = False
-nn_model = False
+nn_model = True
 
 if xgb_model:
     scaler = PowerTransformer()
@@ -192,23 +193,54 @@ if svc_model:
     print_metrics(y_test=y_test, y_pred=y_pred_svc)
 
 if nn_model:
+    tf.random.set_seed(seed)
     scaler = MinMaxScaler()
     X_train_nn = scaler.fit_transform(X_train)
     X_test_nn = scaler.transform(X_test)
+
     name = "nn"
-    model = keras.Sequential([
-        layers.Dense(64, activation='relu', input_shape=(X_train.shape[1],)),
-        layers.Dense(32, activation='relu'),
-        layers.Dense(16, activation='relu'),
-        layers.Dense(1, activation='sigmoid')
-    ])
-    model.compile(optimizer='adam',
+    input_layer = layers.Input(shape=(X_train.shape[1],))
+    x = layers.Dense(256)(input_layer)
+    x = layers.BatchNormalization()(x)
+    x = layers.ReLU()(x)
+    x = layers.Dense(256)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.ReLU()(x)
+    x = layers.Dense(128)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.ReLU()(x)
+    x = layers.Dense(128)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.ReLU()(x)
+    x = layers.Dense(32)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.ReLU()(x)
+    x = layers.Dense(32)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.ReLU()(x)
+    output_layer = layers.Dense(1, activation='sigmoid')(x)
+    model = keras.Model(inputs=input_layer, outputs=output_layer)
+
+    model.compile(optimizer=Adam(learning_rate=0.001),
                   loss='binary_crossentropy',
                   metrics=['accuracy'])
-    model.fit(X_train_nn, y_train, epochs=10, batch_size=32, validation_split=0.15)
+
+    early_stopping = callbacks.EarlyStopping(
+        monitor='val_accuracy',
+        patience=10,
+        verbose=1,
+        restore_best_weights=True,
+    )
+    history = model.fit(X_train_nn, y_train, epochs=50, batch_size=512, validation_split=0.1, callbacks=[early_stopping])
     predictions = model.predict(X_test_nn)
     y_pred_nn = (predictions > 0.5).astype("int32")
+    plt.plot(history.history['loss'], label='Training Loss')
+    plt.plot(history.history['val_loss'], label='Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss')
+    plt.legend()
+    plt.show()
     plot_confusion_matrix(y_test=y_test, y_pred=y_pred_nn, name=name)
     print_metrics(y_test=y_test, y_pred=y_pred_nn)
-
     # ensemble = VotingClassifier(estimators=[('xgb', xgb), ('rf', rf), ('knn', knn)], voting='hard')
