@@ -88,7 +88,8 @@ rf_model = False
 knn_model = False
 ada_model = False
 svc_model = False
-nn_model = True
+nn_model = False
+ensemble = False
 
 if xgb_model:
     scaler = PowerTransformer()
@@ -244,3 +245,36 @@ if nn_model:
     plot_confusion_matrix(y_test=y_test, y_pred=y_pred_nn, name=name)
     print_metrics(y_test=y_test, y_pred=y_pred_nn)
     # ensemble = VotingClassifier(estimators=[('xgb', xgb), ('rf', rf), ('knn', knn)], voting='hard')
+
+if ensemble:
+    pw_scaler = PowerTransformer()
+    mm_scaler = MinMaxScaler()
+    X_train_pw = pw_scaler.fit_transform(X_train)
+    X_test_pw = pw_scaler.transform(X_test)
+    X_train_mm = mm_scaler.fit_transform(X_train)
+    X_test_mm = mm_scaler.transform(X_test)
+    xgb = XGBClassifier(learning_rate=0.1, max_depth=5, n_estimators=300,
+                        subsample=0.8, verbosity=2, seed=seed)
+    rf = RandomForestClassifier(verbose=1, random_state=seed, max_depth=None, n_estimators=400)
+    knn = KNeighborsClassifier(n_neighbors=9, p=1, weights='distance')
+    name = "ensemble"
+    models = [xgb, rf, knn]
+    xgb.fit(X_train_pw, y_train)
+    rf.fit(X_train_pw, y_train)
+    knn.fit(X_train_mm, y_train)
+
+    pred_xgb = xgb.predict(X_test_pw)
+    pred_rf = rf.predict(X_test_pw)
+    pred_knn = knn.predict(X_test_mm)
+
+    final_predictions = []
+    for i in range(len(pred_xgb)):
+        count_1 = (pred_xgb[i] == 1) + (pred_rf[i] == 1) + (pred_knn[i] == 1)
+        count_0 = (pred_xgb[i] == 0) + (pred_rf[i] == 0) + (pred_knn[i] == 0)
+        if count_1 >= count_0:
+            final_predictions.append(1)
+        else:
+            final_predictions.append(0)
+    final_predictions = np.array(final_predictions)
+    plot_confusion_matrix(y_test=y_test, y_pred=final_predictions, name=name)
+    print_metrics(y_test=y_test, y_pred=final_predictions)
