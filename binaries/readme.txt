@@ -1,2 +1,2 @@
-0 -> Legitimate
-1 -> Malware
+folder 0 -> Legitimate
+folder 1 -> Malware

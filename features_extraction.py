@@ -8,7 +8,7 @@ from spafe.features.bfcc import bfcc
 from spafe.utils.preprocessing import SlidingWindow
 from constants import (freq, classes, output_folder_name_converter,
                        channels, segment_folder, output_file, skipped_file,
-                       y_name, path_name)
+                       y_name, path_name, sec_split)
 
 # Tunable
 mfcc_axis = 1
@@ -16,8 +16,7 @@ gfcc_axis = 1
 bfcc_axis = 1
 sr = freq
 channels = channels
-n_ceps = 14
-sec_split = 0.4
+n_ceps = 16
 
 
 def get_wav_duration(file_path):
@@ -26,6 +25,13 @@ def get_wav_duration(file_path):
         rate = wav_file.getframerate()
         duration = frames / float(rate)
     return duration
+
+
+def compute_0_percentage(y):
+    total_elements = y.size
+    zero_count = np.count_nonzero(y == 0)
+    zero_percentage = zero_count / total_elements
+    return zero_percentage
 
 
 # Normalizzazione tramite padding
@@ -42,23 +48,44 @@ def load_and_normalize_audio(file_path, sr=44100, max_length=40000):
 
 
 # Normalizzazione tramite segmentazione
-def load_and_segment_audio(file_path, segment_duration=10, overlap=0.5, sr=44100):
-    if get_wav_duration(file_path=file_path) > segment_duration:
-        y, sr = librosa.load(file_path, sr=sr)
-        segment_length = int(segment_duration * sr)
-        step_length = int(segment_length * (1 - overlap))
-        segments = []
-        for start in range(0, len(y), step_length):
-            end = start + segment_length
-            if end <= len(y):
-                segments.append(y[start:end])
+def load_and_segment_audio(file_path, segment_duration=10, overlap=0.5, sr=44100, pad_shorter=True, allowed_0_perc=None):
+
+    def add_to_list(segments_list, segment, idx, allowed_0_perc):
+        if allowed_0_perc is None:
+            segments_list.append(segment)
+        else:
+            perc_of_0 = compute_0_percentage(y=segment)
+            if perc_of_0 <= allowed_0_perc:
+                segments_list.append(segment)
             else:
-                # Pad the last segment if it is shorter than segment_length
-                segment = np.pad(y[start:end], (0, segment_length - len(y[start:end])), mode='constant')
-                segments.append(segment)
-                break  # Stop if we have padded the last segment
-    else:
-        segments = None
+                print(f"Segment {idx} Of {file_path} Dropped Cause Too Many 0s. {perc_of_0} on {allowed_0_perc} Allowed")
+        return segments_list
+
+    y, sr = librosa.load(file_path, sr=sr)
+    audio_duration = get_wav_duration(file_path=file_path)
+    print(f"Audio {file_path} Is {audio_duration} sec. Len")
+    if audio_duration < segment_duration:
+        if pad_shorter:
+            print(f"Padding Audio {file_path} To Desired Duration")
+            y = librosa.util.fix_length(data=y, size=int(segment_duration * sr))
+        else:
+            print(f"Audio {file_path} Too Short, Skipped.")
+            return None, sr
+    segment_length = int(segment_duration * sr)
+    step_length = int(segment_length * (1 - overlap))
+    segments = []
+    idx = 0
+    for start in range(0, len(y), step_length):
+        end = start + segment_length
+        if end <= len(y):
+            segment = y[start:end]
+            segments = add_to_list(segments_list=segments, segment=segment, idx=idx, allowed_0_perc=allowed_0_perc)
+        else:
+            segment = np.pad(y[start:end], (0, segment_length - len(y[start:end])), mode='constant')
+            segments = add_to_list(segments_list=segments, segment=segment, idx=idx, allowed_0_perc=allowed_0_perc)
+            break
+        idx += 1
+    segments = None if len(segments) == 0 else segments
     return segments, sr
 
 
@@ -174,6 +201,7 @@ def plot_mel_spectogram(y):
     plt.title('Spettrogramma di Mel')
     plt.show()
 
+
 # Constants
 split_audio = False
 process_segments = True
@@ -183,12 +211,13 @@ if split_audio:
         for audio in glob(f"{output_folder_name_converter}{file_class}/*.wav"):
             print(f"Splitting {audio}")
             base_name = audio.split("/")[-1].split(".")[0]
-            segments, _ = load_and_segment_audio(file_path=audio, sr=sr, segment_duration=sec_split, overlap=0.3)
+            segments, _ = load_and_segment_audio(file_path=audio, sr=sr, segment_duration=sec_split,
+                                                 overlap=0.3, pad_shorter=True, allowed_0_perc=0.5)
             if segments is not None:
                 save_segments_as_mp3(segments=segments, sr=sr, output_dir=segment_folder + "/" + file_class,
                                      base_filename=base_name)
             else:
-                print(f"Audio {audio} is shorter then {sec_split} seconds. Ignored")
+                print(f"Audio {audio} Ignored.")
 
 if process_segments:
     dfs = []
@@ -197,13 +226,13 @@ if process_segments:
     subfolders = [x[0] for x in os.walk(segment_folder)]
     len_sub = len(subfolders)
     for i, folder in enumerate(subfolders):
-        print(f"Processing Folder {folder}. {i+1}/{len_sub}")
+        print(f"Processing Folder {folder}. {i + 1}/{len_sub}")
         val = folder.split("/")
         sample_class = set(val).intersection(set(classes))
         files = glob(folder + "/*.mp3")
         len_files = len(files)
         for j, segment in enumerate(files):
-            print(f"Processing File {segment}. {j+1}/{len_files}")
+            print(f"Processing File {segment}. {j + 1}/{len_files}")
             try:
                 y, sr = librosa.load(segment, sr=sr)
                 df = extract_features(y=y, sr=sr)

@@ -1,6 +1,6 @@
 import wave
 from glob import glob
-from constants import classes, output_folder_name_converter
+from constants import classes, output_folder_name_converter, sec_split
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -29,7 +29,7 @@ def create_dataframe_duration(save=True):
     return df
 
 df = create_dataframe_duration(save=False)
-time = 0.4
+time = sec_split
 print("CLASS 0 TOTAL")
 print(df[df["class"] == "0"].describe())
 print(f"CLASS 0 TOTAL >= {time}")

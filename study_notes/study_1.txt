@@ -7,6 +7,7 @@ n_ceps = 14
 sec_split = 0.4
 freq = 44100
 channels = 1
+seed = 42
 Power Scaler (Yao Johnson) per xgb, rf, ada
 MinMax Scaler per Knn, svc, nn
 Colonne Rimosse "mfcc_mean_1", "mfcc_mean_4", "mfcc_mean_6", "gfcc_mean_2", "mfcc_mean_8", "mfcc_mean_7", "mfcc_mean_10"
