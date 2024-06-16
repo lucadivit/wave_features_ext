@@ -5,6 +5,9 @@ import seaborn as sns, numpy as np
 from sklearn.base import TransformerMixin
 
 df = pd.read_csv(output_file)
+class_0 = df[df[y_name] == 0]
+class_1 = df[df[y_name] == 1]
+print(f"Class 0: {class_0.shape}, Class 1: {class_1.shape}")
 df.drop(columns=[y_name, path_name], inplace=True)
 
 
@@ -83,7 +86,7 @@ def remove_outliers(q1=0.25, q3=0.75):
 # print(df.shape)
 # new_df = remove_outliers(q1=0.1, q3=0.9)
 # print(new_df.shape)
-print_outliers(df)
-clipper = ColumnWiseOutlierClipper(lower_percentile=2.5, upper_percentile=97.5)
-df_clipped = clipper.fit_transform(df)
-print_outliers(df_clipped, "box_cox_clipped.png")
+# print_outliers(df)
+# clipper = ColumnWiseOutlierClipper(lower_percentile=2.5, upper_percentile=97.5)
+# df_clipped = clipper.fit_transform(df)
+# print_outliers(df_clipped, "box_cox_clipped.png")

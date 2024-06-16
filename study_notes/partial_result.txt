@@ -1,0 +1,18 @@
+1. dataset.csv
+
+mfcc_axis = 1
+gfcc_axis = 1
+bfcc_axis = 1
+n_ceps = 16
+sec_split = 0.8
+freq = 44100
+channels = 1
+seed = 42
+Power Scaler (Yao Johnson) per xgb, rf, ada
+MinMax Scaler per Knn, svc, nn
+Colonne Rimosse "mfcc_mean_1", "mfcc_mean_4", "mfcc_mean_6", "gfcc_mean_2", "mfcc_mean_8", "mfcc_mean_7", "mfcc_mean_10"
+clip outlier
+
+Accuracy: 0.89
+Precision: 0.86
+Recall: 0.97

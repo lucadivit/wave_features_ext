@@ -89,7 +89,7 @@ knn_model = False
 ada_model = False
 svc_model = False
 nn_model = False
-ensemble = False
+ensemble = True
 
 if xgb_model:
     scaler = PowerTransformer()
