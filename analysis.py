@@ -80,8 +80,8 @@ def remove_outliers(q1=0.25, q3=0.75):
     return df
 
 
-# print_correlation()
-# print_outliers()
+print_correlation()
+print_outliers(df)
 # print_kde()
 # print(df.shape)
 # new_df = remove_outliers(q1=0.1, q3=0.9)

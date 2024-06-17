@@ -18,6 +18,7 @@ from tensorflow import keras
 from tensorflow.keras import layers, regularizers, callbacks
 from tensorflow.keras.optimizers import Adam, RMSprop
 
+
 class ColumnWiseOutlierClipper(TransformerMixin):
     def __init__(self, lower_percentile=1, upper_percentile=99):
         self.lower_percentile = lower_percentile
@@ -59,20 +60,21 @@ def plot_confusion_matrix(y_test, y_pred, name=None):
     # plt.show()
 
 
-def print_metrics(y_pred, y_test):
+def print_metrics(y_pred, y_test, type):
     accuracy = accuracy_score(y_test, y_pred)
     precision = precision_score(y_test, y_pred, average='binary')
     recall = recall_score(y_test, y_pred, average='binary')
+    print(f"----------{type.upper()}-----------")
     print(f'Accuracy: {round(accuracy, 2)}')
     print(f'Precision: {round(precision, 2)}')
     print(f'Recall: {round(recall, 2)}')
+    print(f"------------------------------------")
 
 
 seed = 42
 data = pd.read_csv(output_file)
 data = data.drop(
-    columns=["mfcc_mean_1", "mfcc_mean_4", "mfcc_mean_6", "gfcc_mean_2", "mfcc_mean_8", "mfcc_mean_7", "mfcc_mean_10",
-             path_name])
+    columns=["gfcc_mean_0", "mfcc_mean_4", "mfcc_mean_5", "mfcc_mean_6", "mfcc_mean_8", "mfcc_mean_7", path_name])
 # data = remove_outliers(data)
 name = None
 
@@ -89,7 +91,7 @@ knn_model = False
 ada_model = False
 svc_model = False
 nn_model = False
-ensemble = True
+ensemble = False
 
 if xgb_model:
     scaler = PowerTransformer()
@@ -110,8 +112,10 @@ if xgb_model:
     print("Best XGB Parameters:", halving_grid_search.best_params_)
     best_model = halving_grid_search.best_estimator_
     y_pred_xgb = best_model.predict(X_test_xgb)
+    y_pred_xgb_train = best_model.predict(X_train_xgb)
     plot_confusion_matrix(y_test=y_test, y_pred=y_pred_xgb, name=name)
-    print_metrics(y_test=y_test, y_pred=y_pred_xgb)
+    print_metrics(y_test=y_train, y_pred=y_pred_xgb_train, type="train")
+    print_metrics(y_test=y_test, y_pred=y_pred_xgb, type="test")
 
 if rf_model:
     scaler = PowerTransformer()
@@ -130,9 +134,10 @@ if rf_model:
     print("Best RF Parameters:", halving_grid_search.best_params_)
     best_model = halving_grid_search.best_estimator_
     y_pred_rf = best_model.predict(X_test_rf)
+    y_pred_rf_train = best_model.predict(X_train_rf)
     plot_confusion_matrix(y_test=y_test, y_pred=y_pred_rf, name=name)
-    print_metrics(y_test=y_test, y_pred=y_pred_rf)
-
+    print_metrics(y_test=y_train, y_pred=y_pred_rf_train, type="train")
+    print_metrics(y_test=y_test, y_pred=y_pred_rf, type="test")
 
 if knn_model:
     scaler = MinMaxScaler()
@@ -152,8 +157,10 @@ if knn_model:
     print("Best KNN Parameters:", halving_grid_search.best_params_)
     best_model = halving_grid_search.best_estimator_
     y_pred_knn = best_model.predict(X_test_knn)
+    y_pred_knn_train = best_model.predict(X_train_knn)
     plot_confusion_matrix(y_test=y_test, y_pred=y_pred_knn, name=name)
-    print_metrics(y_test=y_test, y_pred=y_pred_knn)
+    print_metrics(y_test=y_train, y_pred=y_pred_knn_train, type="train")
+    print_metrics(y_test=y_test, y_pred=y_pred_knn, type="test")
 
 if ada_model:
     scaler = PowerTransformer()
@@ -171,8 +178,10 @@ if ada_model:
     print("Best ADA Parameters:", halving_grid_search.best_params_)
     best_model = halving_grid_search.best_estimator_
     y_pred_ada = best_model.predict(X_test_ada)
+    y_pred_ada_train = best_model.predict(X_train_ada)
     plot_confusion_matrix(y_test=y_test, y_pred=y_pred_ada, name=name)
-    print_metrics(y_test=y_test, y_pred=y_pred_ada)
+    print_metrics(y_test=y_train, y_pred=y_pred_ada_train, type="train")
+    print_metrics(y_test=y_test, y_pred=y_pred_ada, type="test")
 
 if svc_model:
     scaler = MinMaxScaler()
@@ -190,30 +199,19 @@ if svc_model:
     print("Best SVC Parameters:", halving_grid_search.best_params_)
     best_model = halving_grid_search.best_estimator_
     y_pred_svc = best_model.predict(X_test_svc)
+    y_pred_svc_train = best_model.predict(X_train_svc)
     plot_confusion_matrix(y_test=y_test, y_pred=y_pred_svc, name=name)
-    print_metrics(y_test=y_test, y_pred=y_pred_svc)
+    print_metrics(y_test=y_train, y_pred=y_pred_svc_train, type="train")
+    print_metrics(y_test=y_test, y_pred=y_pred_svc, type="test")
 
-if nn_model:
+
+def create_nn():
     tf.random.set_seed(seed)
-    scaler = MinMaxScaler()
-    X_train_nn = scaler.fit_transform(X_train)
-    X_test_nn = scaler.transform(X_test)
-
-    name = "nn"
     input_layer = layers.Input(shape=(X_train.shape[1],))
     x = layers.Dense(256)(input_layer)
     x = layers.BatchNormalization()(x)
     x = layers.ReLU()(x)
-    x = layers.Dense(256)(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.ReLU()(x)
     x = layers.Dense(128)(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.ReLU()(x)
-    x = layers.Dense(128)(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.ReLU()(x)
-    x = layers.Dense(32)(x)
     x = layers.BatchNormalization()(x)
     x = layers.ReLU()(x)
     x = layers.Dense(32)(x)
@@ -222,28 +220,48 @@ if nn_model:
     output_layer = layers.Dense(1, activation='sigmoid')(x)
     model = keras.Model(inputs=input_layer, outputs=output_layer)
 
-    model.compile(optimizer=Adam(learning_rate=0.001),
+    model.compile(optimizer=RMSprop(learning_rate=0.0005),
                   loss='binary_crossentropy',
                   metrics=['accuracy'])
+    return model
 
+
+def train_nn(model):
     early_stopping = callbacks.EarlyStopping(
         monitor='val_accuracy',
         patience=10,
         verbose=1,
         restore_best_weights=True,
     )
-    history = model.fit(X_train_nn, y_train, epochs=50, batch_size=512, validation_split=0.1, callbacks=[early_stopping])
+    history = model.fit(X_train_nn, y_train, epochs=50, batch_size=256, validation_split=0.2,
+                        callbacks=[early_stopping])
+    return history
+
+
+if nn_model:
+    scaler = MinMaxScaler()
+    X_train_nn = scaler.fit_transform(X_train)
+    X_test_nn = scaler.transform(X_test)
+
+    name = "nn"
+
+    model = create_nn()
+    history = train_nn(model)
     predictions = model.predict(X_test_nn)
     y_pred_nn = (predictions > 0.5).astype("int32")
+    y_pred_nn_train = (model.predict(X_train_nn) > 0.5).astype("int32")
     plt.plot(history.history['loss'], label='Training Loss')
     plt.plot(history.history['val_loss'], label='Validation Loss')
+    plt.plot(history.history['accuracy'], label='Training Accuracy')
+    plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.title('Training and Validation Loss')
     plt.legend()
     plt.show()
     plot_confusion_matrix(y_test=y_test, y_pred=y_pred_nn, name=name)
-    print_metrics(y_test=y_test, y_pred=y_pred_nn)
+    print_metrics(y_test=y_train, y_pred=y_pred_nn_train, type="train")
+    print_metrics(y_test=y_test, y_pred=y_pred_nn, type="test")
     # ensemble = VotingClassifier(estimators=[('xgb', xgb), ('rf', rf), ('knn', knn)], voting='hard')
 
 if ensemble:
@@ -254,9 +272,9 @@ if ensemble:
     X_train_mm = mm_scaler.fit_transform(X_train)
     X_test_mm = mm_scaler.transform(X_test)
     xgb = XGBClassifier(learning_rate=0.1, max_depth=5, n_estimators=300,
-                        subsample=0.8, verbosity=2, seed=seed)
-    rf = RandomForestClassifier(verbose=1, random_state=seed, max_depth=None, n_estimators=400)
-    knn = KNeighborsClassifier(n_neighbors=9, p=1, weights='distance')
+                        subsample=0.9, verbosity=2, seed=seed)
+    rf = RandomForestClassifier(verbose=1, random_state=seed, max_depth=None, n_estimators=300)
+    knn = KNeighborsClassifier(n_neighbors=7, p=1, weights='distance')
     name = "ensemble"
     models = [xgb, rf, knn]
     xgb.fit(X_train_pw, y_train)
@@ -267,14 +285,30 @@ if ensemble:
     pred_rf = rf.predict(X_test_pw)
     pred_knn = knn.predict(X_test_mm)
 
-    final_predictions = []
+    pred_xgb_train = xgb.predict(X_train_pw)
+    pred_rf_train = rf.predict(X_train_pw)
+    pred_knn_train = knn.predict(X_train_mm)
+
+    final_predictions_test = []
     for i in range(len(pred_xgb)):
         count_1 = (pred_xgb[i] == 1) + (pred_rf[i] == 1) + (pred_knn[i] == 1)
         count_0 = (pred_xgb[i] == 0) + (pred_rf[i] == 0) + (pred_knn[i] == 0)
         if count_1 >= count_0:
-            final_predictions.append(1)
+            final_predictions_test.append(1)
         else:
-            final_predictions.append(0)
-    final_predictions = np.array(final_predictions)
-    plot_confusion_matrix(y_test=y_test, y_pred=final_predictions, name=name)
-    print_metrics(y_test=y_test, y_pred=final_predictions)
+            final_predictions_test.append(0)
+    final_predictions_test = np.array(final_predictions_test)
+
+    final_predictions_train = []
+    for i in range(len(pred_xgb_train)):
+        count_1 = (pred_xgb_train[i] == 1) + (pred_rf_train[i] == 1) + (pred_knn_train[i] == 1)
+        count_0 = (pred_xgb_train[i] == 0) + (pred_rf_train[i] == 0) + (pred_knn_train[i] == 0)
+        if count_1 >= count_0:
+            final_predictions_train.append(1)
+        else:
+            final_predictions_train.append(0)
+    final_predictions_train = np.array(final_predictions_train)
+
+    plot_confusion_matrix(y_test=y_test, y_pred=final_predictions_test, name=name)
+    print_metrics(y_test=y_train, y_pred=final_predictions_train, type="train")
+    print_metrics(y_test=y_test, y_pred=final_predictions_test, type="test")
