@@ -10,12 +10,14 @@ Questi binari rappresentano il dataset legittimo. La folder del progetto nella q
 binari malevoli scaricabili da [qui](https://github.com/MalwareSamples/Linux-Malware-Samples).
 3. `features_extraction.py`: Questo file fa features extraction dai `.wav` creati nello step precedente
 e genera in output un `.csv` .
+4. `models.py`: Inizia il train dei modelli.
 
 ## Altro
 
 1. Il file `support.py` è stato scritto per eseguire test veloci e per fare considerazioni. Non è 
 collegato al funzionamento del resto.
 2. Il file `constants.py` contiene le variabili costanti utilizzati nei diversi files.
+3. Il file `analysis.py` contiene codice per esaminare il dataset e fare delle considerazioni su di esso.
 
 ## Note
 Il repo è scritto in `python3.12` su sistema `Ubuntu 24.04`.
