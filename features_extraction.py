@@ -4,6 +4,7 @@ from gammatone.gtgram import gtgram
 from glob import glob
 from scipy.fftpack import dct
 from matplotlib import pyplot as plt
+from setuptools._distutils.command.check import check
 from spafe.features.bfcc import bfcc
 from spafe.utils.preprocessing import SlidingWindow
 from constants import (freq, classes, output_folder_name_converter,
@@ -48,26 +49,43 @@ def load_and_normalize_audio(file_path, sr=44100, max_length=40000):
 
 
 # Normalizzazione tramite segmentazione
-def load_and_segment_audio(file_path, segment_duration=10, overlap=0.5, sr=44100, pad_shorter=True, allowed_0_perc=None):
+def load_and_segment_audio(file_path, segment_duration=10, overlap=0.5, sr=44100, pad_shorter=True,
+                           allowed_0_perc=None, check_only_padded=True):
 
-    def add_to_list(segments_list, segment, idx, allowed_0_perc):
-        if allowed_0_perc is None:
-            segments_list.append(segment)
+    def add_to_list(segments_list, segment, idx, allowed_0_perc, check_only_padded, is_padded):
+        if check_only_padded:
+            if is_padded:
+                if allowed_0_perc is None:
+                    segments_list.append(segment)
+                else:
+                    perc_of_0 = compute_0_percentage(y=segment)
+                    if perc_of_0 <= allowed_0_perc:
+                        segments_list.append(segment)
+                    else:
+                        print(f"Segment {idx} Of {file_path} Dropped Cause Too Many 0s. {perc_of_0} on {allowed_0_perc} Allowed")
+            else:
+                segments_list.append(segment)
         else:
-            perc_of_0 = compute_0_percentage(y=segment)
-            if perc_of_0 <= allowed_0_perc:
+            if allowed_0_perc is None:
                 segments_list.append(segment)
             else:
-                print(f"Segment {idx} Of {file_path} Dropped Cause Too Many 0s. {perc_of_0} on {allowed_0_perc} Allowed")
+                perc_of_0 = compute_0_percentage(y=segment)
+                if perc_of_0 <= allowed_0_perc:
+                    segments_list.append(segment)
+                else:
+                    print(
+                        f"Segment {idx} Of {file_path} Dropped Cause Too Many 0s. {perc_of_0} on {allowed_0_perc} Allowed")
         return segments_list
 
     y, sr = librosa.load(file_path, sr=sr)
     audio_duration = get_wav_duration(file_path=file_path)
     print(f"Audio {file_path} Is {audio_duration} sec. Len")
+    is_padded = False
     if audio_duration < segment_duration:
         if pad_shorter:
             print(f"Padding Audio {file_path} To Desired Duration")
             y = librosa.util.fix_length(data=y, size=int(segment_duration * sr))
+            is_padded = True
         else:
             print(f"Audio {file_path} Too Short, Skipped.")
             return None, sr
@@ -79,10 +97,12 @@ def load_and_segment_audio(file_path, segment_duration=10, overlap=0.5, sr=44100
         end = start + segment_length
         if end <= len(y):
             segment = y[start:end]
-            segments = add_to_list(segments_list=segments, segment=segment, idx=idx, allowed_0_perc=allowed_0_perc)
+            segments = add_to_list(segments_list=segments, segment=segment, idx=idx, allowed_0_perc=allowed_0_perc,
+                                   check_only_padded=check_only_padded, is_padded=is_padded)
         else:
             segment = np.pad(y[start:end], (0, segment_length - len(y[start:end])), mode='constant')
-            segments = add_to_list(segments_list=segments, segment=segment, idx=idx, allowed_0_perc=allowed_0_perc)
+            segments = add_to_list(segments_list=segments, segment=segment, idx=idx, allowed_0_perc=allowed_0_perc,
+                                   check_only_padded=check_only_padded, is_padded=is_padded)
             break
         idx += 1
     segments = None if len(segments) == 0 else segments
@@ -203,7 +223,7 @@ def plot_mel_spectogram(y):
 
 
 # Constants
-split_audio = False
+split_audio = True
 process_segments = True
 
 if split_audio:
