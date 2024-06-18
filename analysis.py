@@ -90,3 +90,7 @@ print_outliers(df)
 # clipper = ColumnWiseOutlierClipper(lower_percentile=2.5, upper_percentile=97.5)
 # df_clipped = clipper.fit_transform(df)
 # print_outliers(df_clipped, "box_cox_clipped.png")
+
+# TODO
+# Analisi della varianza
+# Analisi features importance
