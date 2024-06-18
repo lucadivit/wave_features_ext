@@ -74,7 +74,8 @@ def print_metrics(y_pred, y_test, type):
 seed = 42
 data = pd.read_csv(output_file)
 data = data.drop(
-    columns=["gfcc_mean_0", "mfcc_mean_4", "mfcc_mean_5", "mfcc_mean_6", "mfcc_mean_8", "mfcc_mean_7", path_name])
+    columns=["mfcc_mean_0", "mfcc_mean_2", "mfcc_mean_4", "mfcc_mean_5", "mfcc_mean_6", "mfcc_mean_7",
+             "mfcc_mean_8", "mfcc_mean_9", "mfcc_mean_10", path_name])
 # data = remove_outliers(data)
 name = None
 
@@ -86,7 +87,7 @@ y = data[y_name]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=seed, shuffle=True)
 
 xgb_model = False
-rf_model = False
+rf_model = True
 knn_model = False
 ada_model = False
 svc_model = False
@@ -101,10 +102,10 @@ if xgb_model:
     name = "xgb"
     xgb = XGBClassifier(use_label_encoder=False, verbosity=2, seed=seed)
     xgb_param_grid = {
-        'n_estimators': [100, 200, 300],
-        'max_depth': [3, 4, 5],
-        'learning_rate': [0.05, 0.1, 0.15],
-        'subsample': [0.8, 0.9, 1.]
+        'n_estimators': [200, 300, 400],
+        'max_depth': [4, 5, 6],
+        'learning_rate': [0.1, 0.15],
+        'subsample': [0.6, 0.8, 1.]
     }
     halving_grid_search = HalvingGridSearchCV(estimator=xgb, param_grid=xgb_param_grid, cv=3, factor=2, verbose=2)
     halving_grid_search.fit(X_train_xgb, y_train)
@@ -125,8 +126,8 @@ if rf_model:
     name = "rf"
     rf = RandomForestClassifier(verbose=1, random_state=seed)
     rf_param_grid = {
-        'n_estimators': [100, 200, 300, 400],
-        'max_depth': [None, 5, 10],
+        'n_estimators': [300, 400, 500],
+        'max_depth': [None, 4, 6],
     }
     halving_grid_search = HalvingGridSearchCV(estimator=rf, param_grid=rf_param_grid, cv=3, factor=2, verbose=2)
     halving_grid_search.fit(X_train_rf, y_train)
@@ -220,7 +221,7 @@ def create_nn():
     output_layer = layers.Dense(1, activation='sigmoid')(x)
     model = keras.Model(inputs=input_layer, outputs=output_layer)
 
-    model.compile(optimizer=RMSprop(learning_rate=0.0005),
+    model.compile(optimizer=RMSprop(learning_rate=0.0002),
                   loss='binary_crossentropy',
                   metrics=['accuracy'])
     return model
@@ -229,11 +230,12 @@ def create_nn():
 def train_nn(model):
     early_stopping = callbacks.EarlyStopping(
         monitor='val_accuracy',
-        patience=10,
+        patience=15,
         verbose=1,
+        mode="max",
         restore_best_weights=True,
     )
-    history = model.fit(X_train_nn, y_train, epochs=50, batch_size=256, validation_split=0.2,
+    history = model.fit(X_train_nn, y_train, epochs=100, batch_size=256, validation_split=0.2,
                         callbacks=[early_stopping])
     return history
 
@@ -274,7 +276,7 @@ if ensemble:
     xgb = XGBClassifier(learning_rate=0.1, max_depth=5, n_estimators=300,
                         subsample=0.9, verbosity=2, seed=seed)
     rf = RandomForestClassifier(verbose=1, random_state=seed, max_depth=None, n_estimators=300)
-    knn = KNeighborsClassifier(n_neighbors=7, p=1, weights='distance')
+    knn = KNeighborsClassifier(n_neighbors=5, p=1, weights='distance')
     name = "ensemble"
     models = [xgb, rf, knn]
     xgb.fit(X_train_pw, y_train)

@@ -1,0 +1,113 @@
+dataset_3.csv
+
+mfcc_axis = 1
+gfcc_axis = 1
+bfcc_axis = 1
+n_ceps = 16
+sec_split = 1.2
+freq = 44100
+channels = 1
+seed = 42
+Power Scaler (Yao Johnson) per xgb, rf, ada
+MinMax Scaler per Knn, svc, nn
+Colonne Rimosse "mfcc_mean_0", "mfcc_mean_2", "mfcc_mean_4", "mfcc_mean_5", "mfcc_mean_6", "mfcc_mean_7", "mfcc_mean_8", "mfcc_mean_9", "mfcc_mean_10"
+clip outlier
+
+
+Best XGB Accuracy: 0.89
+Best XGB Parameters: {'learning_rate': 0.1, 'max_depth': 5, 'n_estimators': 300, 'subsample': 0.9}
+----------TRAIN-----------
+Accuracy: 0.99
+Precision: 0.99
+Recall: 0.99
+------------------------------------
+----------TEST-----------
+Accuracy: 0.91
+Precision: 0.91
+Recall: 0.93
+------------------------------------
+
+
+Best RF Accuracy: 0.9
+Best RF Parameters: {'max_depth': None, 'n_estimators': 300}
+
+----------TRAIN-----------
+Accuracy: 1.0
+Precision: 1.0
+Recall: 1.0
+------------------------------------
+----------TEST-----------
+Accuracy: 0.92
+Precision: 0.92
+Recall: 0.93
+------------------------------------
+
+Best KNN Accuracy: 0.86
+Best KNN Parameters: {'n_neighbors': 5, 'p': 1, 'weights': 'distance'}
+----------TRAIN-----------
+Accuracy: 1.0
+Precision: 1.0
+Recall: 1.0
+------------------------------------
+----------TEST-----------
+Accuracy: 0.88
+Precision: 0.9
+Recall: 0.89
+------------------------------------
+
+def create_nn():
+    tf.random.set_seed(seed)
+    input_layer = layers.Input(shape=(X_train.shape[1],))
+    x = layers.Dense(256)(input_layer)
+    x = layers.BatchNormalization()(x)
+    x = layers.ReLU()(x)
+    x = layers.Dense(128)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.ReLU()(x)
+    x = layers.Dense(32)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.ReLU()(x)
+    output_layer = layers.Dense(1, activation='sigmoid')(x)
+    model = keras.Model(inputs=input_layer, outputs=output_layer)
+
+    model.compile(optimizer=RMSprop(learning_rate=0.0002),
+                  loss='binary_crossentropy',
+                  metrics=['accuracy'])
+    return model
+
+
+def train_nn(model):
+    early_stopping = callbacks.EarlyStopping(
+        monitor='val_accuracy',
+        patience=15,
+        verbose=1,
+        mode="max",
+        restore_best_weights=True,
+    )
+    history = model.fit(X_train_nn, y_train, epochs=100, batch_size=256, validation_split=0.2,
+                        callbacks=[early_stopping])
+    return history
+
+----------TRAIN-----------
+Accuracy: 0.92
+Precision: 0.91
+Recall: 0.95
+------------------------------------
+----------TEST-----------
+Accuracy: 0.86
+Precision: 0.85
+Recall: 0.9
+------------------------------------
+
+Ensemble
+----------TRAIN-----------
+Accuracy: 0.99
+Precision: 0.99
+Recall: 1.0
+------------------------------------
+----------TEST-----------
+Accuracy: 0.9
+Precision: 0.87
+Recall: 0.97
+------------------------------------
+

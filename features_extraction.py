@@ -17,7 +17,7 @@ gfcc_axis = 1
 bfcc_axis = 1
 sr = freq
 channels = channels
-n_ceps = 16
+n_ceps = 20
 
 
 def get_wav_duration(file_path):
@@ -222,9 +222,8 @@ def plot_mel_spectogram(y):
     plt.show()
 
 
-# Constants
-split_audio = True
-process_segments = True
+split_audio = False
+process_segments = False
 
 if split_audio:
     for file_class in classes:
