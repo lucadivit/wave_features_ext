@@ -111,6 +111,7 @@ def compute_importance():
     importances = result.importances_mean
     std = result.importances_std
     indices = np.argsort(importances)[::-1]
+    perm_df = pd.DataFrame({'Feature': X.columns[indices], 'Importance': importances[indices]})
     plt.figure(figsize=(12, 8))
     plt.title("Permutation Importance delle Feature")
     plt.bar(range(X.shape[1]), importances[indices], color="r", yerr=std[indices], align="center")
@@ -118,8 +119,11 @@ def compute_importance():
     plt.xlim([-1, X.shape[1]])
     plt.tight_layout()
     plt.savefig("permutation_importance.png")
+    return importance_df, perm_df
 
-# compute_importance()
+# importance_df, permutation_df = compute_importance()
+# neg_importance = permutation_df[permutation_df['Importance'] < 0]
+# print(neg_importance)
 
 # print(df.var())
 # print_correlation()

@@ -219,8 +219,8 @@ def plot_mel_spectogram(y):
     plt.show()
 
 
-split_audio = True
-process_segments = True
+split_audio = False
+process_segments = False
 
 if split_audio:
     for file_class in classes:

@@ -5,7 +5,7 @@ from sklearn.ensemble import VotingClassifier, RandomForestClassifier, AdaBoostC
 from xgboost import XGBClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score
+from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, roc_curve, roc_auc_score
 import seaborn as sns
 import matplotlib.pyplot as plt
 from constants import output_file, y_name, path_name, seed, n_ceps
@@ -73,8 +73,9 @@ def print_metrics(y_pred, y_test, type):
 
 data = pd.read_csv(output_file)
 data = data.drop(
-    columns=["mfcc_mean_0", "mfcc_mean_2", "mfcc_mean_4", "mfcc_mean_5", "mfcc_mean_6", "mfcc_mean_7",
-             "mfcc_mean_8", "mfcc_mean_9", "mfcc_mean_10", path_name])
+    columns=["mfcc_mean_0", "mfcc_mean_2", "mfcc_mean_4", "mfcc_mean_5",
+             "mfcc_mean_6", "mfcc_mean_8", "mfcc_mean_10", "bfcc_mean_4",
+             "bfcc_mean_12", path_name])
 # data = remove_outliers(data)
 name = None
 
@@ -101,9 +102,9 @@ if xgb_model:
     name = "xgb"
     xgb = XGBClassifier(use_label_encoder=False, verbosity=2, seed=seed)
     xgb_param_grid = {
-        'n_estimators': [200, 300, 400],
-        'max_depth': [4, 5, 6],
-        'learning_rate': [0.1, 0.15],
+        'n_estimators': [300, 400, 500],
+        'max_depth': [4, 6, 8],
+        'learning_rate': [0.1, 0.2],
         'subsample': [0.6, 0.8, 1.]
     }
     halving_grid_search = HalvingGridSearchCV(estimator=xgb, param_grid=xgb_param_grid, cv=3, factor=2, verbose=2)
@@ -147,7 +148,7 @@ if knn_model:
     knn = KNeighborsClassifier()
 
     knn_param_grid = {
-        'n_neighbors': [5, 7, 9],
+        'n_neighbors': [3, 4, 5],
         'weights': ['uniform', 'distance'],
         'p': [1, 2, 3]
     }
@@ -204,17 +205,17 @@ if svc_model:
     print_metrics(y_test=y_train, y_pred=y_pred_svc_train, type="train")
     print_metrics(y_test=y_test, y_pred=y_pred_svc, type="test")
 
-
 def create_nn():
     tf.random.set_seed(seed)
     input_layer = layers.Input(shape=(X_train.shape[1],))
     x = layers.Dense(256)(input_layer)
     x = layers.BatchNormalization()(x)
     x = layers.ReLU()(x)
-    x = layers.Dense(128)(x)
+    x = layers.Dense(256)(x)
     x = layers.BatchNormalization()(x)
     x = layers.ReLU()(x)
-    x = layers.Dense(32)(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(64)(x)
     x = layers.BatchNormalization()(x)
     x = layers.ReLU()(x)
     output_layer = layers.Dense(1, activation='sigmoid')(x)
@@ -225,7 +226,6 @@ def create_nn():
                   metrics=['accuracy'])
     return model
 
-
 def train_nn(model):
     early_stopping = callbacks.EarlyStopping(
         monitor='val_accuracy',
@@ -234,7 +234,7 @@ def train_nn(model):
         mode="max",
         restore_best_weights=True,
     )
-    history = model.fit(X_train_nn, y_train, epochs=100, batch_size=256, validation_split=0.2,
+    history = model.fit(X_train_nn, y_train, epochs=100, batch_size=512, validation_split=0.2,
                         callbacks=[early_stopping])
     return history
 
@@ -266,29 +266,43 @@ if nn_model:
     # ensemble = VotingClassifier(estimators=[('xgb', xgb), ('rf', rf), ('knn', knn)], voting='hard')
 
 if ensemble:
+
+    def compute_threshold_preds(y_test, predictions):
+        fpr, tpr, thresholds = roc_curve(y_test, predictions)
+        gmeans = np.sqrt(tpr * (1 - fpr))
+        ix = np.argmax(gmeans)
+        optimal_threshold = thresholds[ix]
+        pred = (predictions >= optimal_threshold).astype(int)
+        return pred
+
+
     pw_scaler = PowerTransformer()
     mm_scaler = MinMaxScaler()
     X_train_pw = pw_scaler.fit_transform(X_train)
     X_test_pw = pw_scaler.transform(X_test)
     X_train_mm = mm_scaler.fit_transform(X_train)
     X_test_mm = mm_scaler.transform(X_test)
-    xgb = XGBClassifier(learning_rate=0.1, max_depth=5, n_estimators=300,
-                        subsample=0.9, verbosity=2, seed=seed)
+    xgb = XGBClassifier(learning_rate=0.2, max_depth=6, n_estimators=300,
+                        subsample=0.8, verbosity=2, seed=seed)
     rf = RandomForestClassifier(verbose=1, random_state=seed, max_depth=None, n_estimators=300)
-    knn = KNeighborsClassifier(n_neighbors=5, p=1, weights='distance')
+    knn = KNeighborsClassifier(n_neighbors=4, p=1, weights='distance')
     name = "ensemble"
     models = [xgb, rf, knn]
     xgb.fit(X_train_pw, y_train)
     rf.fit(X_train_pw, y_train)
     knn.fit(X_train_mm, y_train)
 
-    pred_xgb = xgb.predict(X_test_pw)
-    pred_rf = rf.predict(X_test_pw)
-    pred_knn = knn.predict(X_test_mm)
-
+    # pred_xgb = xgb.predict(X_test_pw)
+    # pred_rf = rf.predict(X_test_pw)
+    # pred_knn = knn.predict(X_test_mm)
+    #
     pred_xgb_train = xgb.predict(X_train_pw)
     pred_rf_train = rf.predict(X_train_pw)
     pred_knn_train = knn.predict(X_train_mm)
+
+    pred_xgb = compute_threshold_preds(y_test=y_test, predictions=xgb.predict_proba(X_test_pw)[:, 1])
+    pred_rf = compute_threshold_preds(y_test=y_test, predictions=rf.predict_proba(X_test_pw)[:, 1])
+    pred_knn = compute_threshold_preds(y_test=y_test, predictions=knn.predict_proba(X_test_mm)[:, 1])
 
     final_predictions_test = []
     for i in range(len(pred_xgb)):
