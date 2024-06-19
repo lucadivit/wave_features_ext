@@ -10,6 +10,8 @@ segment_folder = "segmented_audio"
 freq = 44100
 channels = 1
 sec_split = 1.2
+seed = 42
+n_ceps = 20
 
 output_file = "dataset_4.csv"
 skipped_file = "skipped.csv"

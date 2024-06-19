@@ -1,10 +1,18 @@
 import pandas as pd
-from constants import output_file, y_name, path_name
+from constants import output_file, y_name, path_name, seed
 from matplotlib import pyplot as plt
 import seaborn as sns, numpy as np
 from sklearn.base import TransformerMixin
+from xgboost import XGBClassifier
+from sklearn.inspection import permutation_importance
+from sklearn.model_selection import train_test_split
 
 df = pd.read_csv(output_file)
+features = list(df.columns)
+for c in [y_name, path_name]:
+    features.remove(c)
+X = df[features]
+y = df[y_name]
 class_0 = df[df[y_name] == 0]
 class_1 = df[df[y_name] == 1]
 print(f"Class 0: {class_0.shape}, Class 1: {class_1.shape}")
@@ -80,8 +88,42 @@ def remove_outliers(q1=0.25, q3=0.75):
     return df
 
 
-print_correlation()
-print_outliers(df)
+def compute_importance():
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=seed)
+    model = XGBClassifier(use_label_encoder=False, verbosity=2, seed=seed)
+    model.fit(X_train, y_train)
+
+    print("Computing Feature Importance")
+    importance = model.feature_importances_
+    feature_names = X.columns
+    importance_df = pd.DataFrame({'Feature': feature_names, 'Importance': importance})
+    importance_df = importance_df.sort_values(by='Importance', ascending=False)
+    plt.figure(figsize=(12, 8))
+    plt.title("Feature Importance")
+    plt.barh(importance_df['Feature'], importance_df['Importance'], color="b", align="center")
+    plt.xlabel('Importance')
+    plt.gca().invert_yaxis()
+    plt.tight_layout()
+    plt.savefig("feature_importance.png")
+
+    print("Computing Permutation Importance")
+    result = permutation_importance(model, X_test, y_test, n_repeats=10, random_state=seed, n_jobs=-1)
+    importances = result.importances_mean
+    std = result.importances_std
+    indices = np.argsort(importances)[::-1]
+    plt.figure(figsize=(12, 8))
+    plt.title("Permutation Importance delle Feature")
+    plt.bar(range(X.shape[1]), importances[indices], color="r", yerr=std[indices], align="center")
+    plt.xticks(range(X.shape[1]), X.columns[indices], rotation=90)
+    plt.xlim([-1, X.shape[1]])
+    plt.tight_layout()
+    plt.savefig("permutation_importance.png")
+
+# compute_importance()
+
+# print(df.var())
+# print_correlation()
+# print_outliers(df)
 # print_kde()
 # print(df.shape)
 # new_df = remove_outliers(q1=0.1, q3=0.9)
@@ -91,6 +133,3 @@ print_outliers(df)
 # df_clipped = clipper.fit_transform(df)
 # print_outliers(df_clipped, "box_cox_clipped.png")
 
-# TODO
-# Analisi della varianza
-# Analisi features importance

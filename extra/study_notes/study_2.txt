@@ -1,0 +1,66 @@
+dataset_2.csv
+
+mfcc_axis = 1
+gfcc_axis = 1
+bfcc_axis = 1
+n_ceps = 16
+sec_split = 0.8
+freq = 44100
+channels = 1
+seed = 42
+Power Scaler (Yao Johnson) per xgb, rf, ada
+MinMax Scaler per Knn, svc, nn
+Colonne Rimosse "gfcc_mean_0", "mfcc_mean_4", "mfcc_mean_5", "mfcc_mean_6", "mfcc_mean_8", "mfcc_mean_7"
+clip outlier
+
+Best XGB Accuracy: 0.88
+Best XGB Parameters: {'learning_rate': 0.1, 'max_depth': 5, 'n_estimators': 300, 'subsample': 0.9}
+----------TRAIN-----------
+Accuracy: 0.97
+Precision: 0.97
+Recall: 0.98
+------------------------------------
+----------TEST-----------
+Accuracy: 0.9
+Precision: 0.9
+Recall: 0.93
+------------------------------------
+
+Best RF Accuracy: 0.89
+Best RF Parameters: {'max_depth': None, 'n_estimators': 300}
+----------TRAIN-----------
+Accuracy: 1.0
+Precision: 1.0
+Recall: 1.0
+------------------------------------
+----------TEST-----------
+Accuracy: 0.92
+Precision: 0.92
+Recall: 0.94
+------------------------------------
+
+Best KNN Accuracy: 0.86
+Best KNN Parameters: {'n_neighbors': 7, 'p': 1, 'weights': 'distance'}
+
+----------TRAIN-----------
+Accuracy: 1.0
+Precision: 1.0
+Recall: 1.0
+------------------------------------
+----------TEST-----------
+Accuracy: 0.87
+Precision: 0.9
+Recall: 0.88
+------------------------------------
+
+Ensemble
+----------TRAIN-----------
+Accuracy: 0.98
+Precision: 0.97
+Recall: 1.0
+------------------------------------
+----------TEST-----------
+Accuracy: 0.9
+Precision: 0.87
+Recall: 0.97
+------------------------------------

@@ -4,20 +4,17 @@ from gammatone.gtgram import gtgram
 from glob import glob
 from scipy.fftpack import dct
 from matplotlib import pyplot as plt
-from setuptools._distutils.command.check import check
 from spafe.features.bfcc import bfcc
 from spafe.utils.preprocessing import SlidingWindow
 from constants import (freq, classes, output_folder_name_converter,
                        channels, segment_folder, output_file, skipped_file,
-                       y_name, path_name, sec_split)
+                       y_name, path_name, sec_split, n_ceps)
 
 # Tunable
 mfcc_axis = 1
 gfcc_axis = 1
 bfcc_axis = 1
 sr = freq
-channels = channels
-n_ceps = 20
 
 
 def get_wav_duration(file_path):
@@ -222,8 +219,8 @@ def plot_mel_spectogram(y):
     plt.show()
 
 
-split_audio = False
-process_segments = False
+split_audio = True
+process_segments = True
 
 if split_audio:
     for file_class in classes:

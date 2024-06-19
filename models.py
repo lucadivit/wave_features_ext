@@ -8,7 +8,7 @@ from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score
 import seaborn as sns
 import matplotlib.pyplot as plt
-from constants import output_file, y_name, path_name
+from constants import output_file, y_name, path_name, seed, n_ceps
 from sklearn.experimental import enable_halving_search_cv  # Abilita gli estimatori di ricerca di riduzione progressiva
 from sklearn.model_selection import HalvingGridSearchCV
 from sklearn.base import TransformerMixin
@@ -71,7 +71,6 @@ def print_metrics(y_pred, y_test, type):
     print(f"------------------------------------")
 
 
-seed = 42
 data = pd.read_csv(output_file)
 data = data.drop(
     columns=["mfcc_mean_0", "mfcc_mean_2", "mfcc_mean_4", "mfcc_mean_5", "mfcc_mean_6", "mfcc_mean_7",
@@ -87,12 +86,12 @@ y = data[y_name]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=seed, shuffle=True)
 
 xgb_model = False
-rf_model = True
+rf_model = False
 knn_model = False
 ada_model = False
 svc_model = False
 nn_model = False
-ensemble = False
+ensemble = True
 
 if xgb_model:
     scaler = PowerTransformer()
