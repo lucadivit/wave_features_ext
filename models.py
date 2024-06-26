@@ -8,7 +8,7 @@ from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, roc_curve, roc_auc_score
 import seaborn as sns
 import matplotlib.pyplot as plt
-from constants import output_file, y_name, path_name, seed, n_ceps
+from constants import output_file, y_name, path_name, seed, n_ceps, output_test_fn, output_train_fn
 from sklearn.experimental import enable_halving_search_cv  # Abilita gli estimatori di ricerca di riduzione progressiva
 from sklearn.model_selection import HalvingGridSearchCV
 from sklearn.base import TransformerMixin
@@ -75,16 +75,25 @@ data = pd.read_csv(output_file)
 data = data.drop(
     columns=["mfcc_mean_0", "mfcc_mean_2", "mfcc_mean_4", "mfcc_mean_5",
              "mfcc_mean_6", "mfcc_mean_8", "mfcc_mean_10", "bfcc_mean_4",
-             "bfcc_mean_12", path_name])
+             "bfcc_mean_12"])
 # data = remove_outliers(data)
 name = None
 
 X = data.drop(y_name, axis=1)
+paths = data[path_name]
+X = X.drop(path_name, axis=1)
 clipper = ColumnWiseOutlierClipper(lower_percentile=2.5, upper_percentile=97.5)
 X = clipper.fit_transform(X)
+X[path_name] = paths
 y = data[y_name]
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=seed, shuffle=True)
+train_path = X_train[path_name]
+test_path = X_test[path_name]
+X_train = X_train.drop(path_name, axis=1)
+X_test = X_test.drop(path_name, axis=1)
+
+
 
 xgb_model = False
 rf_model = False
@@ -327,3 +336,5 @@ if ensemble:
     plot_confusion_matrix(y_test=y_test, y_pred=final_predictions_test, name=name)
     print_metrics(y_test=y_train, y_pred=final_predictions_train, type="train")
     print_metrics(y_test=y_test, y_pred=final_predictions_test, type="test")
+    pd.DataFrame({"true_label": y_train, "predicted_label": final_predictions_train, path_name: train_path}).to_csv(output_train_fn, index=False)
+    pd.DataFrame({"true_label": y_test, "predicted_label": final_predictions_test, path_name: test_path}).to_csv(output_test_fn, index=False)
