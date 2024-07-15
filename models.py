@@ -24,6 +24,7 @@ def save_model(path: str, model):
     with open(f'{path}.pkl', 'wb') as file:
         pickle.dump(model, file)
 
+
 class ColumnWiseOutlierClipper(TransformerMixin):
     def __init__(self, lower_percentile=1, upper_percentile=99):
         self.lower_percentile = lower_percentile
@@ -89,7 +90,6 @@ paths = data[path_name]
 X = X.drop(path_name, axis=1)
 clipper = ColumnWiseOutlierClipper(lower_percentile=2.5, upper_percentile=97.5)
 X = clipper.fit_transform(X)
-save_model(path="Clipper", model=clipper)
 X[path_name] = paths
 y = data[y_name]
 
@@ -99,15 +99,13 @@ test_path = X_test[path_name]
 X_train = X_train.drop(path_name, axis=1)
 X_test = X_test.drop(path_name, axis=1)
 
-
-
 xgb_model = False
 rf_model = False
 knn_model = False
 ada_model = False
 svc_model = False
 nn_model = False
-ensemble = True
+ensemble = False
 
 if xgb_model:
     scaler = PowerTransformer()
@@ -220,6 +218,7 @@ if svc_model:
     print_metrics(y_test=y_train, y_pred=y_pred_svc_train, type="train")
     print_metrics(y_test=y_test, y_pred=y_pred_svc, type="test")
 
+
 def create_nn():
     tf.random.set_seed(seed)
     input_layer = layers.Input(shape=(X_train.shape[1],))
@@ -240,6 +239,7 @@ def create_nn():
                   loss='binary_crossentropy',
                   metrics=['accuracy'])
     return model
+
 
 def train_nn(model):
     early_stopping = callbacks.EarlyStopping(
@@ -312,7 +312,7 @@ if ensemble:
     save_model(path="KNN", model=knn)
     save_model(path="PowerTransform", model=pw_scaler)
     save_model(path="MinMaxTransform", model=mm_scaler)
-
+    save_model(path="Clipper", model=clipper)
 
     # pred_xgb = xgb.predict(X_test_pw)
     # pred_rf = rf.predict(X_test_pw)
@@ -353,5 +353,25 @@ if ensemble:
     plot_confusion_matrix(y_test=y_test, y_pred=final_predictions_test, name=name)
     print_metrics(y_test=y_train, y_pred=final_predictions_train, type="train")
     print_metrics(y_test=y_test, y_pred=final_predictions_test, type="test")
-    pd.DataFrame({"true_label": y_train, "predicted_label": final_predictions_train, path_name: train_path}).to_csv(output_train_fn, index=False)
-    pd.DataFrame({"true_label": y_test, "predicted_label": final_predictions_test, path_name: test_path}).to_csv(output_test_fn, index=False)
+    pd.DataFrame({"true_label": y_train, "predicted_label": final_predictions_train, path_name: train_path}).to_csv(
+        output_train_fn, index=False)
+    pd.DataFrame({"true_label": y_test, "predicted_label": final_predictions_test, path_name: test_path}).to_csv(
+        output_test_fn, index=False)
+
+
+def load_predictions():
+    train_df = pd.read_csv(output_train_fn)
+    test_df = pd.read_csv(output_test_fn)
+    final_df = pd.concat([train_df, test_df], axis=0)
+    final_df["Service"] = final_df["path"].apply(lambda x: x.split("/")[2])
+    final_df = final_df.set_index('Service')
+    final_df['NumericalIndex'] = final_df.groupby(level=0).cumcount()
+    final_df = final_df.set_index('NumericalIndex', append=True)
+    final_df = final_df.sort_index(level=0)
+    return final_df
+
+
+df = load_predictions()
+category_a_rows = df.loc['docker']
+print(category_a_rows.columns)
+print(set(category_a_rows["true_label"]), set(category_a_rows["predicted_label"]))

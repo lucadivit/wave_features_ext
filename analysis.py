@@ -137,19 +137,3 @@ def compute_importance():
 # df_clipped = clipper.fit_transform(df)
 # print_outliers(df_clipped, "box_cox_clipped.png")
 
-def load_predictions():
-    train_df = pd.read_csv("train_result.csv")
-    test_df = pd.read_csv("test_result.csv")
-    final_df = pd.concat([train_df, test_df], axis=0)
-    final_df["Service"] = final_df["path"].apply(lambda x: x.split("/")[2])
-    final_df = final_df.set_index('Service')
-    final_df['NumericalIndex'] = final_df.groupby(level=0).cumcount()
-    final_df = final_df.set_index('NumericalIndex', append=True)
-    final_df = final_df.sort_index(level=0)
-    return final_df
-
-df = load_predictions()
-category_a_rows = df.loc['docker']
-print(category_a_rows.columns)
-print(set(category_a_rows["true_label"]), set(category_a_rows["predicted_label"]))
-
