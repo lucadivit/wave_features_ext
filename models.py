@@ -89,6 +89,7 @@ paths = data[path_name]
 X = X.drop(path_name, axis=1)
 clipper = ColumnWiseOutlierClipper(lower_percentile=2.5, upper_percentile=97.5)
 X = clipper.fit_transform(X)
+save_model(path="Clipper", model=clipper)
 X[path_name] = paths
 y = data[y_name]
 
@@ -281,10 +282,6 @@ if nn_model:
 
 if ensemble:
 
-    def save_model(path: str, model):
-        with open(f'{path}.pkl', 'wb') as file:
-            pickle.dump(model, file)
-
     def compute_threshold_preds(y_test, predictions):
         fpr, tpr, thresholds = roc_curve(y_test, predictions)
         gmeans = np.sqrt(tpr * (1 - fpr))
@@ -313,6 +310,8 @@ if ensemble:
     save_model(path="XGB", model=xgb)
     save_model(path="RF", model=rf)
     save_model(path="KNN", model=knn)
+    save_model(path="PowerTransform", model=pw_scaler)
+    save_model(path="MinMaxTransform", model=mm_scaler)
 
 
     # pred_xgb = xgb.predict(X_test_pw)
