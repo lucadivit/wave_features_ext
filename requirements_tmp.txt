@@ -7,3 +7,4 @@ pydub==0.25.1
 gammatone==1.0.1
 scipy~=1.13.1
 spafe==0.3.3
+xgboost==2.0.3
