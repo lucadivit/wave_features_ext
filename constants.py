@@ -13,7 +13,7 @@ sec_split = 0.8
 seed = 42
 n_ceps = 14
 
-output_file = "dataset_5.csv"
+output_file = "extra/old_datasets/dataset_5.csv"
 skipped_file = "skipped.csv"
 y_name = "label"
 path_name = "path"

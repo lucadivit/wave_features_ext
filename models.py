@@ -20,6 +20,10 @@ from tensorflow.keras.optimizers import Adam, RMSprop
 import pickle
 
 
+def save_model(path: str, model):
+    with open(f'{path}.pkl', 'wb') as file:
+        pickle.dump(model, file)
+
 class ColumnWiseOutlierClipper(TransformerMixin):
     def __init__(self, lower_percentile=1, upper_percentile=99):
         self.lower_percentile = lower_percentile
@@ -85,6 +89,8 @@ paths = data[path_name]
 X = X.drop(path_name, axis=1)
 clipper = ColumnWiseOutlierClipper(lower_percentile=2.5, upper_percentile=97.5)
 X = clipper.fit_transform(X)
+save_model(path="Clipper", model=clipper)
+exit(0)
 X[path_name] = paths
 y = data[y_name]
 
@@ -276,10 +282,6 @@ if nn_model:
     # ensemble = VotingClassifier(estimators=[('xgb', xgb), ('rf', rf), ('knn', knn)], voting='hard')
 
 if ensemble:
-
-    def save_model(path: str, model):
-        with open(f'{path}.pkl', 'wb') as file:
-            pickle.dump(model, file)
 
     def compute_threshold_preds(y_test, predictions):
         fpr, tpr, thresholds = roc_curve(y_test, predictions)
