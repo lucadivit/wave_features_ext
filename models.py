@@ -297,7 +297,7 @@ if ensemble:
     X_train_mm = mm_scaler.fit_transform(X_train)
     X_test_mm = mm_scaler.transform(X_test)
     xgb = XGBClassifier(learning_rate=0.2, max_depth=6, n_estimators=300,
-                        subsample=0.8, verbosity=2, seed=seed)
+                        subsample=0.8, verbosity=2, random_state=seed)
     rf = RandomForestClassifier(verbose=1, random_state=seed, max_depth=None, n_estimators=300)
     knn = KNeighborsClassifier(n_neighbors=4, p=1, weights='distance')
     name = "ensemble"
@@ -323,9 +323,9 @@ if ensemble:
     pred_rf, rf_thr = compute_threshold_preds(y_test=y_test, predictions=rf.predict_proba(X_test_pw)[:, 1])
     pred_knn, knn_thr = compute_threshold_preds(y_test=y_test, predictions=knn.predict_proba(X_test_mm)[:, 1])
 
-    print(f"XGB Thr: {xgb_thr}") # 0.397
-    print(f"RF Thr: {rf_thr}") # 0.496
-    print(f"KNN Thr: {knn_thr}") # 0.516
+    print(f"XGB Thr: {xgb_thr}")
+    print(f"RF Thr: {rf_thr}")
+    print(f"KNN Thr: {knn_thr}")
 
     final_predictions_test = []
     for i in range(len(pred_xgb)):
