@@ -7,16 +7,16 @@ from xgboost import XGBClassifier
 from sklearn.inspection import permutation_importance
 from sklearn.model_selection import train_test_split
 
-df = pd.read_csv(output_file)
-features = list(df.columns)
-for c in [y_name, path_name]:
-    features.remove(c)
-X = df[features]
-y = df[y_name]
-class_0 = df[df[y_name] == 0]
-class_1 = df[df[y_name] == 1]
-print(f"Class 0: {class_0.shape}, Class 1: {class_1.shape}")
-df.drop(columns=[y_name, path_name], inplace=True)
+# df = pd.read_csv(output_file)
+# features = list(df.columns)
+# for c in [y_name, path_name]:
+#     features.remove(c)
+# X = df[features]
+# y = df[y_name]
+# class_0 = df[df[y_name] == 0]
+# class_1 = df[df[y_name] == 1]
+# print(f"Class 0: {class_0.shape}, Class 1: {class_1.shape}")
+# df.drop(columns=[y_name, path_name], inplace=True)
 
 
 class ColumnWiseOutlierClipper(TransformerMixin):
@@ -136,4 +136,20 @@ def compute_importance():
 # clipper = ColumnWiseOutlierClipper(lower_percentile=2.5, upper_percentile=97.5)
 # df_clipped = clipper.fit_transform(df)
 # print_outliers(df_clipped, "box_cox_clipped.png")
+
+def load_predictions():
+    train_df = pd.read_csv("train_result.csv")
+    test_df = pd.read_csv("test_result.csv")
+    final_df = pd.concat([train_df, test_df], axis=0)
+    final_df["Service"] = final_df["path"].apply(lambda x: x.split("/")[2])
+    final_df = final_df.set_index('Service')
+    final_df['NumericalIndex'] = final_df.groupby(level=0).cumcount()
+    final_df = final_df.set_index('NumericalIndex', append=True)
+    final_df = final_df.sort_index(level=0)
+    return final_df
+
+df = load_predictions()
+category_a_rows = df.loc['docker']
+print(category_a_rows.columns)
+print(set(category_a_rows["true_label"]), set(category_a_rows["predicted_label"]))
 
