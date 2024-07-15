@@ -28,6 +28,13 @@ class FeaturesExtractor:
             cls.__cols_to_drop = ["mfcc_mean_0", "mfcc_mean_2", "mfcc_mean_4", "mfcc_mean_5",
                                   "mfcc_mean_6", "mfcc_mean_8", "mfcc_mean_10", "bfcc_mean_4",
                                   "bfcc_mean_12"]
+            cls.__columns = ['mfcc_mean_1', 'mfcc_mean_3', 'mfcc_mean_7', 'mfcc_mean_9', 'mfcc_mean_11',
+                             'mfcc_mean_12', 'mfcc_mean_13', 'gfcc_mean_0', 'gfcc_mean_1', 'gfcc_mean_2',
+                             'gfcc_mean_3', 'gfcc_mean_4', 'gfcc_mean_5', 'gfcc_mean_6', 'gfcc_mean_7',
+                             'gfcc_mean_8', 'gfcc_mean_9', 'gfcc_mean_10', 'gfcc_mean_11', 'gfcc_mean_12',
+                             'gfcc_mean_13', 'bfcc_mean_0', 'bfcc_mean_1', 'bfcc_mean_2', 'bfcc_mean_3',
+                             'bfcc_mean_5', 'bfcc_mean_6', 'bfcc_mean_7', 'bfcc_mean_8', 'bfcc_mean_9',
+                             'bfcc_mean_10', 'bfcc_mean_11', 'bfcc_mean_13']
         return cls._inst
 
     def __convert_to_wav(self, binary_file_path, output_wave_path, sample_rate=44100, channels=1) -> None:
@@ -314,9 +321,14 @@ class FeaturesExtractor:
                     dfs.append(df)
                 except Exception as e:
                     self.__logger.exception(f"Error During Features Extraction: {e}")
-        final_df = pd.concat(dfs, ignore_index=True)
-        final_df = final_df.drop(columns=self.__cols_to_drop)
-        final_df = self.__clipper.transform(final_df)
         self.__delete_file(file_path=wave_path)
         self.__delete_directory(directory=mp3_path)
-        return final_df
+        df = pd.concat(dfs, ignore_index=True)
+        df = self.__process_dataset(df=df)
+        return df
+
+    def __process_dataset(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = df.drop(columns=self.__cols_to_drop)
+        df = self.__clipper.transform(df)
+        df = df[self.__columns]
+        return df

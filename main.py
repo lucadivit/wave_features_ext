@@ -8,4 +8,4 @@ load_dotenv()
 predictor = Predictor()
 extractor = FeaturesExtractor()
 df = extractor.create_features(binary_file_path="test")
-
+result = predictor.predict(data_to_predict=df)

@@ -90,7 +90,6 @@ X = X.drop(path_name, axis=1)
 clipper = ColumnWiseOutlierClipper(lower_percentile=2.5, upper_percentile=97.5)
 X = clipper.fit_transform(X)
 save_model(path="Clipper", model=clipper)
-exit(0)
 X[path_name] = paths
 y = data[y_name]
 
@@ -311,6 +310,8 @@ if ensemble:
     save_model(path="XGB", model=xgb)
     save_model(path="RF", model=rf)
     save_model(path="KNN", model=knn)
+    save_model(path="PowerTransform", model=pw_scaler)
+    save_model(path="MinMaxTransform", model=mm_scaler)
 
 
     # pred_xgb = xgb.predict(X_test_pw)
