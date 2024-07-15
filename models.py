@@ -17,6 +17,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers, regularizers, callbacks
 from tensorflow.keras.optimizers import Adam, RMSprop
+import pickle
 
 
 class ColumnWiseOutlierClipper(TransformerMixin):
@@ -276,13 +277,17 @@ if nn_model:
 
 if ensemble:
 
+    def save_model(path: str, model):
+        with open(f'{path}.pkl', 'wb') as file:
+            pickle.dump(model, file)
+
     def compute_threshold_preds(y_test, predictions):
         fpr, tpr, thresholds = roc_curve(y_test, predictions)
         gmeans = np.sqrt(tpr * (1 - fpr))
         ix = np.argmax(gmeans)
         optimal_threshold = thresholds[ix]
         pred = (predictions >= optimal_threshold).astype(int)
-        return pred
+        return pred, optimal_threshold
 
 
     pw_scaler = PowerTransformer()
@@ -301,6 +306,11 @@ if ensemble:
     rf.fit(X_train_pw, y_train)
     knn.fit(X_train_mm, y_train)
 
+    save_model(path="XGB", model=xgb)
+    save_model(path="RF", model=rf)
+    save_model(path="KNN", model=knn)
+
+
     # pred_xgb = xgb.predict(X_test_pw)
     # pred_rf = rf.predict(X_test_pw)
     # pred_knn = knn.predict(X_test_mm)
@@ -309,9 +319,13 @@ if ensemble:
     pred_rf_train = rf.predict(X_train_pw)
     pred_knn_train = knn.predict(X_train_mm)
 
-    pred_xgb = compute_threshold_preds(y_test=y_test, predictions=xgb.predict_proba(X_test_pw)[:, 1])
-    pred_rf = compute_threshold_preds(y_test=y_test, predictions=rf.predict_proba(X_test_pw)[:, 1])
-    pred_knn = compute_threshold_preds(y_test=y_test, predictions=knn.predict_proba(X_test_mm)[:, 1])
+    pred_xgb, xgb_thr = compute_threshold_preds(y_test=y_test, predictions=xgb.predict_proba(X_test_pw)[:, 1])
+    pred_rf, rf_thr = compute_threshold_preds(y_test=y_test, predictions=rf.predict_proba(X_test_pw)[:, 1])
+    pred_knn, knn_thr = compute_threshold_preds(y_test=y_test, predictions=knn.predict_proba(X_test_mm)[:, 1])
+
+    print(f"XGB Thr: {xgb_thr}") # 0.397
+    print(f"RF Thr: {rf_thr}") # 0.496
+    print(f"KNN Thr: {knn_thr}") # 0.516
 
     final_predictions_test = []
     for i in range(len(pred_xgb)):
