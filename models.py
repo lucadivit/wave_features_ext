@@ -297,7 +297,7 @@ if ensemble:
     X_train_mm = mm_scaler.fit_transform(X_train)
     X_test_mm = mm_scaler.transform(X_test)
     xgb = XGBClassifier(learning_rate=0.2, max_depth=6, n_estimators=300,
-                        subsample=0.8, verbosity=2, seed=seed)
+                        subsample=0.8, verbosity=2, random_state=seed)
     rf = RandomForestClassifier(verbose=1, random_state=seed, max_depth=None, n_estimators=300)
     knn = KNeighborsClassifier(n_neighbors=4, p=1, weights='distance')
     name = "ensemble"
