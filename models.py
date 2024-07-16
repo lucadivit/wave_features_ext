@@ -374,12 +374,12 @@ if ensemble:
     rf.fit(X_train_pw, y_train)
     knn.fit(X_train_mm, y_train)
 
-    save_model(path="XGB", model=xgb)
-    save_model(path="RF", model=rf)
-    save_model(path="KNN", model=knn)
-    save_model(path="PowerTransform", model=pw_scaler)
-    save_model(path="MinMaxTransform", model=mm_scaler)
-    save_model(path="Clipper", model=clipper)
+    save_model(path="exported_models/XGB", model=xgb)
+    save_model(path="exported_models/RF", model=rf)
+    save_model(path="exported_models/KNN", model=knn)
+    save_model(path="exported_models/PowerTransform", model=pw_scaler)
+    save_model(path="exported_models/MinMaxTransform", model=mm_scaler)
+    save_model(path="exported_models/Clipper", model=clipper)
 
     # pred_xgb = xgb.predict(X_test_pw)
     # pred_rf = rf.predict(X_test_pw)
