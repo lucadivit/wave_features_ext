@@ -1,4 +1,4 @@
-import pandas as pd
+import pandas as pd, random, json
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, PowerTransformer, MinMaxScaler
 from sklearn.ensemble import VotingClassifier, RandomForestClassifier, AdaBoostClassifier
@@ -8,7 +8,8 @@ from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, roc_curve, roc_auc_score
 import seaborn as sns
 import matplotlib.pyplot as plt
-from constants import output_file, y_name, path_name, seed, n_ceps, output_test_fn, output_train_fn, summary_fn
+from constants import (output_file, y_name, path_name, seed, n_ceps, output_test_fn, output_train_fn,
+                       summary_fn, output_validation_fn, threshold_fn, train_set_fn, test_set_fn, validation_set_fn)
 from sklearn.experimental import enable_halving_search_cv  # Abilita gli estimatori di ricerca di riduzione progressiva
 from sklearn.model_selection import HalvingGridSearchCV
 from sklearn.base import TransformerMixin
@@ -23,7 +24,6 @@ import pickle
 def save_model(path: str, model):
     with open(f'{path}.pkl', 'wb') as file:
         pickle.dump(model, file)
-
 
 class ColumnWiseOutlierClipper(TransformerMixin):
     def __init__(self, lower_percentile=1, upper_percentile=99):
@@ -78,27 +78,87 @@ def print_metrics(y_pred, y_test, type):
     return accuracy, precision, recall
 
 
-data = pd.read_csv(output_file)
-data = data.drop(
-    columns=["mfcc_mean_0", "mfcc_mean_2", "mfcc_mean_4", "mfcc_mean_5",
-             "mfcc_mean_6", "mfcc_mean_8", "mfcc_mean_10", "bfcc_mean_4",
-             "bfcc_mean_12"])
-# data = remove_outliers(data)
+def get_validation_set(df: pd.DataFrame):
+    raw_df = df.copy()
+    df = df.copy()
+    paths = df[path_name].values
+    service = [path.split("/")[2] for path in paths]
+    df["service"] = service
+    sub_df_leg = df[df[y_name] == 0]
+    sub_df_neg = df[df[y_name] == 1]
+    leg_services = list(set(sub_df_leg["service"].values))
+    mal_services = list(set(sub_df_neg["service"].values))
+    random.seed(seed)
+    leg_services_random = random.choices(leg_services, k=10)
+    mal_services_random = random.choices(mal_services, k=10)
+    sub_df_leg_random = df[df['service'].isin(leg_services_random)]
+    sub_df_mal_random = df[df['service'].isin(mal_services_random)]
+    index_to_rm = list(sub_df_leg_random.index) + list(sub_df_mal_random.index)
+    raw_df.drop(index_to_rm, inplace=True)
+    validation_set = pd.concat([sub_df_leg_random, sub_df_mal_random], ignore_index=True)
+    validation_set.drop(columns="service", inplace=True)
+    return validation_set, raw_df
+
+
+def save_df(X, y, name):
+    df = X.copy()
+    df[y_name] = y
+    df.to_csv(f"{name}", index=False)
+
+
 name = None
-
-X = data.drop(y_name, axis=1)
-paths = data[path_name]
-X = X.drop(path_name, axis=1)
+load = True
 clipper = ColumnWiseOutlierClipper(lower_percentile=2.5, upper_percentile=97.5)
-X = clipper.fit_transform(X)
-X[path_name] = paths
-y = data[y_name]
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=seed, shuffle=True)
-train_path = X_train[path_name]
-test_path = X_test[path_name]
-X_train = X_train.drop(path_name, axis=1)
-X_test = X_test.drop(path_name, axis=1)
+if load:
+    print("Loading Old Files")
+    X_train = pd.read_csv(train_set_fn)
+    y_train = X_train[y_name]
+    X_train = X_train.drop(y_name, axis=1)
+    train_path = X_train[path_name]
+    X_train = X_train.drop(path_name, axis=1)
+    X_train = clipper.fit_transform(X_train)
+
+    X_test = pd.read_csv(test_set_fn)
+    y_test = X_test[y_name]
+    X_test = X_test.drop(y_name, axis=1)
+    test_path = X_test[path_name]
+    X_test = X_test.drop(path_name, axis=1)
+    X_test = clipper.transform(X_test)
+
+    X_val = pd.read_csv(validation_set_fn)
+    y_val = X_val[y_name]
+    X_val = X_val.drop(y_name, axis=1)
+    validation_path = X_val[path_name]
+    X_val = X_val.drop(path_name, axis=1)
+    X_val = clipper.transform(X_val)
+else:
+    data = pd.read_csv(output_file)
+    data = data.drop(
+        columns=["mfcc_mean_0", "mfcc_mean_2", "mfcc_mean_4", "mfcc_mean_5",
+                 "mfcc_mean_6", "mfcc_mean_8", "mfcc_mean_10", "bfcc_mean_4",
+                 "bfcc_mean_12"])
+
+    validation_set, data = get_validation_set(df=data)
+    X = data.drop(y_name, axis=1)
+    y = data[y_name]
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=seed, shuffle=True)
+    save_df(X=X_train, y=y_train, name=train_set_fn)
+    save_df(X=X_test, y=y_test, name=test_set_fn)
+    train_path = X_train[path_name]
+    test_path = X_test[path_name]
+    X_train = X_train.drop(path_name, axis=1)
+    X_train = clipper.fit_transform(X_train)
+    X_test = X_test.drop(path_name, axis=1)
+    X_test = clipper.transform(X_test)
+
+    y_val = validation_set[y_name]
+    X_val = validation_set.drop(y_name, axis=1)
+    save_df(X=X_val, y=y_val, name=validation_set_fn)
+    validation_path = X_val[path_name]
+    X_val = X_val.drop(path_name, axis=1)
+    X_val = clipper.transform(X_val)
 
 xgb_model = False
 rf_model = False
@@ -106,7 +166,7 @@ knn_model = False
 ada_model = False
 svc_model = False
 nn_model = False
-ensemble = False
+ensemble = True
 
 if xgb_model:
     scaler = PowerTransformer()
@@ -283,12 +343,15 @@ if nn_model:
 
 if ensemble:
 
-    def compute_threshold_preds(y_test, predictions):
-        fpr, tpr, thresholds = roc_curve(y_test, predictions)
-        gmeans = np.sqrt(tpr * (1 - fpr))
-        ix = np.argmax(gmeans)
-        optimal_threshold = thresholds[ix]
-        pred = (predictions >= optimal_threshold).astype(int)
+    def compute_threshold_preds(y_test, predictions, optimal_threshold=None):
+        if optimal_threshold is None:
+            fpr, tpr, thresholds = roc_curve(y_test, predictions)
+            gmeans = np.sqrt(tpr * (1 - fpr))
+            ix = np.argmax(gmeans)
+            optimal_threshold = thresholds[ix]
+            pred = (predictions >= optimal_threshold).astype(int)
+        else:
+            pred = (predictions >= optimal_threshold).astype(int)
         return pred, optimal_threshold
 
 
@@ -296,8 +359,11 @@ if ensemble:
     mm_scaler = MinMaxScaler()
     X_train_pw = pw_scaler.fit_transform(X_train)
     X_test_pw = pw_scaler.transform(X_test)
+    X_val_pw = pw_scaler.transform(X_val)
     X_train_mm = mm_scaler.fit_transform(X_train)
     X_test_mm = mm_scaler.transform(X_test)
+    X_val_mm = mm_scaler.transform(X_val)
+
     xgb = XGBClassifier(learning_rate=0.2, max_depth=6, n_estimators=300,
                         subsample=0.8, verbosity=2, random_state=seed)
     rf = RandomForestClassifier(verbose=1, random_state=seed, max_depth=None, n_estimators=300)
@@ -327,9 +393,17 @@ if ensemble:
     pred_rf, rf_thr = compute_threshold_preds(y_test=y_test, predictions=rf.predict_proba(X_test_pw)[:, 1])
     pred_knn, knn_thr = compute_threshold_preds(y_test=y_test, predictions=knn.predict_proba(X_test_mm)[:, 1])
 
+    pred_xgb_val, _ = compute_threshold_preds(y_test=None, predictions=xgb.predict_proba(X_val_pw)[:, 1], optimal_threshold=xgb_thr)
+    pred_rf_val, _ = compute_threshold_preds(y_test=None, predictions=rf.predict_proba(X_val_pw)[:, 1], optimal_threshold=rf_thr)
+    pred_knn_val, _ = compute_threshold_preds(y_test=None, predictions=knn.predict_proba(X_val_mm)[:, 1], optimal_threshold=knn_thr)
+
     print(f"XGB Thr: {xgb_thr}")
     print(f"RF Thr: {rf_thr}")
     print(f"KNN Thr: {knn_thr}")
+
+    data = {"XGB_Thr": float(xgb_thr), "RF_Thr": float(rf_thr), "KNN_Thr": float(knn_thr)}
+    with open(threshold_fn, 'w') as file:
+        json.dump(data, file, indent=4)
 
     final_predictions_test = []
     for i in range(len(pred_xgb)):
@@ -351,20 +425,31 @@ if ensemble:
             final_predictions_train.append(0)
     final_predictions_train = np.array(final_predictions_train)
 
+    final_predictions_validation = []
+    for i in range(len(pred_xgb_val)):
+        count_1 = (pred_xgb_val[i] == 1) + (pred_rf_val[i] == 1) + (pred_knn_val[i] == 1)
+        count_0 = (pred_xgb_val[i] == 0) + (pred_rf_val[i] == 0) + (pred_knn_val[i] == 0)
+        if count_1 >= count_0:
+            final_predictions_validation.append(1)
+        else:
+            final_predictions_validation.append(0)
+    final_predictions_validation = np.array(final_predictions_validation)
+
     plot_confusion_matrix(y_test=y_test, y_pred=final_predictions_test, name=name)
     print_metrics(y_test=y_train, y_pred=final_predictions_train, type="train")
     print_metrics(y_test=y_test, y_pred=final_predictions_test, type="test")
+    print_metrics(y_test=y_val, y_pred=final_predictions_validation, type="validation")
     pd.DataFrame({"true_label": y_train, "predicted_label": final_predictions_train, path_name: train_path}).to_csv(
         output_train_fn, index=False)
     pd.DataFrame({"true_label": y_test, "predicted_label": final_predictions_test, path_name: test_path}).to_csv(
         output_test_fn, index=False)
+    pd.DataFrame({"true_label": y_val, "predicted_label": final_predictions_validation, path_name: validation_path}).to_csv(
+        output_validation_fn, index=False)
 
 
-def load_predictions():
-    train_df = pd.read_csv(output_train_fn)
-    test_df = pd.read_csv(output_test_fn)
-    final_df = pd.concat([train_df, test_df], axis=0)
-    final_df["Service"] = final_df["path"].apply(lambda x: x.split("/")[2])
+def load_validation():
+    final_df = pd.read_csv(output_validation_fn)
+    final_df["Service"] = final_df[path_name].apply(lambda x: x.split("/")[2])
     final_df = final_df.set_index('Service')
     final_df['NumericalIndex'] = final_df.groupby(level=0).cumcount()
     final_df = final_df.set_index('NumericalIndex', append=True)
@@ -372,8 +457,9 @@ def load_predictions():
     return final_df
 
 
-df = load_predictions()
+df = load_validation()
 
+thr_tests = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 
 def summarize_group(group):
     true_label = list(set(group['true_label'].values))[0]
@@ -386,22 +472,15 @@ def summarize_group(group):
         'true_label': true_label,
     }
 
-    for perc in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]:
+    for perc in thr_tests:
         new_row[str(perc)] = 1 if ratio > perc else 0
 
     return pd.Series(new_row)
 
-
-# Applichiamo la funzione a ogni gruppo
 summary = df.groupby(level='Service').apply(summarize_group).reset_index(drop=True)
-
-# Salviamo il risultato in un file CSV
-summary_fn = 'summary.csv'
 summary.to_csv(summary_fn, index=False)
 
-print(summary)
-
-cols = ['0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7']
+cols = [str(elem) for elem in thr_tests]
 true_values = summary["true_label"]
 thr = []
 acc = []
@@ -416,4 +495,3 @@ for col in cols:
     rec.append(recall)
 
 pd.DataFrame({"threshold": thr, "accuracy": acc, "precision": prec, "recall": rec}).to_csv("summary_metrics.csv", index=False)
-
