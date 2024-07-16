@@ -6,6 +6,7 @@ classes = [legitimate_class, malware_class]
 input_folder_name_converter = "binaries/"
 output_folder_name_converter = "waves/"
 segment_folder = "segmented_audio"
+validation_folder = "validation_audio"
 
 freq = 44100
 channels = 1
