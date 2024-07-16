@@ -372,6 +372,13 @@ def load_predictions():
 
 
 df = load_predictions()
-category_a_rows = df.loc['docker']
-print(category_a_rows.columns)
-print(set(category_a_rows["true_label"]), set(category_a_rows["predicted_label"]))
+unique_categories = df.index.get_level_values('Service').unique()
+summary = pd.DataFrame()
+for service in unique_categories:
+    subdf = df.loc[service]
+    true = list(set(subdf["true_label"].values))
+    n_rows = subdf.shape[0]
+    nb_1s = (subdf['predicted_label'] == 1).sum()
+    summary["true_label"] = true
+    print(n_rows)
+    break
