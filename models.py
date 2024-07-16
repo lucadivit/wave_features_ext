@@ -8,7 +8,7 @@ from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, roc_curve, roc_auc_score
 import seaborn as sns
 import matplotlib.pyplot as plt
-from constants import output_file, y_name, path_name, seed, n_ceps, output_test_fn, output_train_fn
+from constants import output_file, y_name, path_name, seed, n_ceps, output_test_fn, output_train_fn, summary_fn
 from sklearn.experimental import enable_halving_search_cv  # Abilita gli estimatori di ricerca di riduzione progressiva
 from sklearn.model_selection import HalvingGridSearchCV
 from sklearn.base import TransformerMixin
@@ -75,6 +75,7 @@ def print_metrics(y_pred, y_test, type):
     print(f'Precision: {round(precision, 2)}')
     print(f'Recall: {round(recall, 2)}')
     print(f"------------------------------------")
+    return accuracy, precision, recall
 
 
 data = pd.read_csv(output_file)
@@ -372,13 +373,47 @@ def load_predictions():
 
 
 df = load_predictions()
-unique_categories = df.index.get_level_values('Service').unique()
-summary = pd.DataFrame()
-for service in unique_categories:
-    subdf = df.loc[service]
-    true = list(set(subdf["true_label"].values))
-    n_rows = subdf.shape[0]
-    nb_1s = (subdf['predicted_label'] == 1).sum()
-    summary["true_label"] = true
-    print(n_rows)
-    break
+
+
+def summarize_group(group):
+    true_label = list(set(group['true_label'].values))[0]
+    n_rows = group.shape[0]
+    nb_1s = (group['predicted_label'] == 1).sum()
+    ratio = nb_1s / n_rows
+
+    new_row = {
+        'service': group.name,
+        'true_label': true_label,
+    }
+
+    for perc in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]:
+        new_row[str(perc)] = 1 if ratio > perc else 0
+
+    return pd.Series(new_row)
+
+
+# Applichiamo la funzione a ogni gruppo
+summary = df.groupby(level='Service').apply(summarize_group).reset_index(drop=True)
+
+# Salviamo il risultato in un file CSV
+summary_fn = 'summary.csv'
+summary.to_csv(summary_fn, index=False)
+
+print(summary)
+
+cols = ['0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7']
+true_values = summary["true_label"]
+thr = []
+acc = []
+prec = []
+rec = []
+for col in cols:
+    predicted_values = summary[col]
+    accuracy, precision, recall = print_metrics(y_test=true_values, y_pred=predicted_values, type=col)
+    thr.append(float(col))
+    acc.append(accuracy)
+    prec.append(precision)
+    rec.append(recall)
+
+pd.DataFrame({"threshold": thr, "accuracy": acc, "precision": prec, "recall": rec}).to_csv("summary_metrics.csv", index=False)
+
