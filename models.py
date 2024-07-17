@@ -9,7 +9,8 @@ from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, r
 import seaborn as sns
 import matplotlib.pyplot as plt
 from constants import (output_file, y_name, path_name, seed, n_ceps, output_test_fn, output_train_fn,
-                       summary_fn, output_validation_fn, threshold_fn, train_set_fn, test_set_fn, validation_set_fn)
+                       summary_fn, output_validation_fn, threshold_fn, train_set_fn, test_set_fn, validation_set_fn,
+                       n_service_for_validation)
 from sklearn.experimental import enable_halving_search_cv  # Abilita gli estimatori di ricerca di riduzione progressiva
 from sklearn.model_selection import HalvingGridSearchCV
 from sklearn.base import TransformerMixin
@@ -81,23 +82,22 @@ def print_metrics(y_pred, y_test, type):
 def get_validation_set(df: pd.DataFrame):
     raw_df = df.copy()
     df = df.copy()
-    paths = df[path_name].values
-    service = [path.split("/")[2] for path in paths]
-    df["service"] = service
-    sub_df_leg = df[df[y_name] == 0]
-    sub_df_neg = df[df[y_name] == 1]
-    leg_services = list(set(sub_df_leg["service"].values))
-    mal_services = list(set(sub_df_neg["service"].values))
+    df["service"] = [path.split("/")[2] for path in df[path_name].values]
     random.seed(seed)
-    leg_services_random = random.choices(leg_services, k=10)
-    mal_services_random = random.choices(mal_services, k=10)
-    sub_df_leg_random = df[df['service'].isin(leg_services_random)]
-    sub_df_mal_random = df[df['service'].isin(mal_services_random)]
-    index_to_rm = list(sub_df_leg_random.index) + list(sub_df_mal_random.index)
-    raw_df.drop(index_to_rm, inplace=True)
-    validation_set = pd.concat([sub_df_leg_random, sub_df_mal_random], ignore_index=True)
-    validation_set.drop(columns="service", inplace=True)
-    return validation_set, raw_df
+    sub_df_legitimate_random = df[df['service'].isin(
+        random.choices(
+            list(set(df[df[y_name] == 0]["service"].values)),
+            k=n_service_for_validation)
+    )]
+    sub_df_malware_random = df[df['service'].isin(
+        random.choices(
+            list(set(df[df[y_name] == 1]["service"].values)),
+            k=n_service_for_validation)
+    )]
+    raw_df.drop(list(sub_df_legitimate_random.index) + list(sub_df_malware_random.index), inplace=True)
+    val_set = pd.concat([sub_df_legitimate_random, sub_df_malware_random], ignore_index=True)
+    val_set.drop(columns="service", inplace=True)
+    return val_set, raw_df
 
 
 def save_df(X, y, name):

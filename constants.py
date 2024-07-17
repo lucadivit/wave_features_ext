@@ -13,6 +13,7 @@ sec_split = 0.8
 seed = 42
 n_ceps = 14
 perc_thr = 0.3
+n_service_for_validation = 10
 
 output_file = "dataset_5.csv"
 skipped_file = "skipped.csv"
