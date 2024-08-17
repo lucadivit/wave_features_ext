@@ -137,3 +137,49 @@ def compute_importance():
 # df_clipped = clipper.fit_transform(df)
 # print_outliers(df_clipped, "box_cox_clipped.png")
 
+
+import pandas as pd
+from sklearn.metrics import accuracy_score, precision_score, recall_score
+
+'''
+
+# Supponendo che il file CSV si chiami 'data.csv'
+df = pd.read_csv('test_result.csv')
+
+# Estrai le colonne rilevanti
+y_true = df['true_label']
+y_pred = df['predicted_label']
+
+# Calcolo dell'accuracy
+accuracy = accuracy_score(y_true, y_pred)
+
+# Calcolo della precisione
+precision = precision_score(y_true, y_pred)
+
+# Calcolo del recall
+recall = recall_score(y_true, y_pred)
+
+# Stampa i risultati
+print(f"Accuracy: {accuracy:.2f}")
+print(f"Precision: {precision:.2f}")
+print(f"Recall: {recall:.2f}")
+'''
+
+df = pd.read_csv("test_result.csv")
+paths = df["path"].values
+leg = []
+mal = []
+
+for path in paths:
+    path_list = path.split("/")
+    class_ = path_list[1]
+    file_ = path_list[2]
+    if class_ == "0":
+        leg.append(file_)
+    else:
+        mal.append(file_)
+print("Leg", len(leg))
+print("Mal", len(mal))
+
+
+
