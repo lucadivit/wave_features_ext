@@ -141,9 +141,7 @@ def compute_importance():
 import pandas as pd
 from sklearn.metrics import accuracy_score, precision_score, recall_score
 
-'''
 
-# Supponendo che il file CSV si chiami 'data.csv'
 df = pd.read_csv('test_result.csv')
 
 # Estrai le colonne rilevanti
@@ -180,6 +178,8 @@ for path in paths:
         mal.append(file_)
 print("Leg", len(leg))
 print("Mal", len(mal))
+
+'''
 
 
 
