@@ -28,14 +28,20 @@ Una volta scaricati i files gli script necessari al funzionamento sono 3:
 è popolato dallo step precedente, mentre la cartella `/binaries/1` deve essere creata prima del lancio di questo script, e deve contenere i 
 binari malevoli scaricabili da [qui](https://github.com/MalwareSamples/Linux-Malware-Samples).
 2. `features_extraction.py`: Questo file fa features extraction dai `.wav` creati nello step precedente
-e genera in output un `.csv` .
-3. `models.py`: Inizia il train dei modelli.
+e genera in output un `.csv` . NB Per eseguire le operazioni per la features extracion è necessario porre i parametri: 
+   1. `split_audio = True` --> Fa chunking e overlap dei singoli waves 
+   2. `process_segments = True` --> Calcola MFCC, GFCC, BFCC e salva in csv
+3. `models.py`: Inizia il train dei modelli. In questo file hai diverse variabili:
+   1. `load = True|False` Se `True` ti carica i file di train, test e validation che già esistono. Se non ci sono ed è la prima volta che lanci il programma deve essere `False`
+   2. `<Nomi_Modelli> = True|False` se `True` esegue il train per quel modello. Ad ora l'unico addestrato il `ensemble`.
 
 ## Altro
 
 1. Il file `support.py` è stato scritto per eseguire test veloci e per fare considerazioni. Non è 
 collegato al funzionamento del resto.
 2. Il file `constants.py` contiene le variabili costanti utilizzati nei diversi files.
+Questo file è tra i più importanti in quanto i valori al suo interno sono usati in maniera invasiva. Se si vuol cambiare
+nomi dei file in output o altre costanti, bisogna intervenire qui.
 3. Il file `analysis.py` contiene codice per esaminare il dataset e fare delle considerazioni su di esso.
 
 ## Note

@@ -12,8 +12,9 @@ channels = 1
 sec_split = 0.8
 seed = 42
 n_ceps = 14
-perc_thr = 0.3
+overlap = 0.3
 n_service_for_validation = 10
+max_0_perc_allowed=0.5
 
 output_file = "dataset_5.csv"
 skipped_file = "skipped.csv"

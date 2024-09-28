@@ -107,7 +107,7 @@ def save_df(X, y, name):
 
 
 name = None
-load = True
+load = False
 clipper = ColumnWiseOutlierClipper(lower_percentile=2.5, upper_percentile=97.5)
 
 if load:

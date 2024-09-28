@@ -8,7 +8,7 @@ from spafe.features.bfcc import bfcc
 from spafe.utils.preprocessing import SlidingWindow
 from constants import (freq, classes, output_folder_name_converter,
                        channels, segment_folder, output_file, skipped_file,
-                       y_name, path_name, sec_split, n_ceps)
+                       y_name, path_name, sec_split, n_ceps, overlap, max_0_perc_allowed)
 
 # Tunable
 mfcc_axis = 1
@@ -219,8 +219,8 @@ def plot_mel_spectogram(y):
     plt.show()
 
 
-split_audio = False
-process_segments = False
+split_audio = True
+process_segments = True
 
 if split_audio:
     for file_class in classes:
@@ -228,7 +228,7 @@ if split_audio:
             print(f"Splitting {audio}")
             base_name = audio.split("/")[-1].split(".")[0]
             segments, _ = load_and_segment_audio(file_path=audio, sr=sr, segment_duration=sec_split,
-                                                 overlap=0.3, pad_shorter=True, allowed_0_perc=0.5)
+                                                 overlap=overlap, pad_shorter=True, allowed_0_perc=max_0_perc_allowed)
             if segments is not None:
                 save_segments_as_mp3(segments=segments, sr=sr, output_dir=segment_folder + "/" + file_class,
                                      base_filename=base_name)
