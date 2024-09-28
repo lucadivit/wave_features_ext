@@ -1,6 +1,7 @@
 # Wave Features Extraction
 
-Questo branch contiene codice utilizzabile per il riconoscimento dei malware da binari.
+Questo branch contiene codice utilizzabile per il riconoscimento dei malware da binari,
+ed è relativo al talk "The Sound Of Malware".
 
 ## Funzionamento
 
