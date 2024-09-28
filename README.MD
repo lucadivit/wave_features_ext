@@ -21,7 +21,7 @@ Per prima cosa è necessario scaricare i binari. Per questo puoi seguire due str
 1. Scarichi i binari malevoli dal link [Malware Source 1](https://github.com/MalwareSamples/Linux-Malware-Samples), e li inserisci nel path
 `binaries/1/`, e i binari legittimi in `binaries/0/` (per questi puoi prendere spunto dal file `copy_source.py` che copia la cartella `/bin` di ubuntu),
 2. Scarichi i binari forniti dal link [Whole Dataset](https://mega.nz/file/alNw0aCa#sg8x5pmCgeDyoT0BvXURL45-2GoYX86ILhKglx1Yi2w). Sono già divisi nelle folder 
-richieste quindi ti basterà decomprimese il file nella root del progetto.
+richieste quindi ti basterà decomprimere il file nella root del progetto.
 
 Una volta scaricati i files gli script necessari al funzionamento sono 3:
 1. `converter.py`: Converte il contenuto di `/binaries/{0|1}` in file `.wav`, dove il contenuto di `/binaries/0/` è legittimo ed
