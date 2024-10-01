@@ -35,6 +35,7 @@ e genera in output un `.csv` . NB Per eseguire le operazioni per la features ext
    1. `load = True|False` Se `True` ti carica i file di train, test e validation che già esistono. Se non ci sono ed è la prima volta che lanci il programma deve essere `False`
    2. `<Nomi_Modelli> = True|False` se `True` esegue il train per quel modello. Ad ora l'unico addestrato il `ensemble`.
 
+Nota: I dati forniti non corrispondono a quelli utilizzati in fase di studio e test, <u>i risultati sono quindi svincolati rispetto quelli presentati nel talk.</u>
 ## Altro
 
 1. Il file `support.py` è stato scritto per eseguire test veloci e per fare considerazioni. Non è 
