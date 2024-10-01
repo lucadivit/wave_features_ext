@@ -22,6 +22,8 @@ sudo apt-get install ffmpeg
 NB: Se sei su sistema Windows il comando sopra non funzionerà per cui dovrai 
 scaricare e aggiungere ffmpeg alle variabili di ambiente.
 
+I dati forniti non corrispondono a quelli utilizzati in fase di studio e test, <u>i risultati sono quindi svincolati rispetto quelli presentati nel talk.</u>
+
 Infine per lanciare il programma:
 ```
 python3 main.py
